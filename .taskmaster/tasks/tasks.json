@@ -118,12 +118,68 @@
         "id": 3,
         "title": "Create repository listing API endpoint",
         "description": "Implement FastAPI endpoint to list all repositories with pagination, search, and sorting capabilities",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "details": "Create GET /api/repositories endpoint. Implement query parameters for search, sort, and pagination. Return repository name, tag count, and last updated time. Add proper error handling and status codes. Implement response caching.",
         "testStrategy": "API endpoint tests with various query parameters, verify pagination logic, test search functionality, check sorting accuracy",
         "dependencies": [
           2
+        ],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "API 라우터 및 기본 구조 설정",
+            "description": "FastAPI 라우터 설정과 의존성 주입 구조를 구현합니다",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 3
+          },
+          {
+            "id": 2,
+            "title": "페이지네이션 모델 및 유틸리티 구현",
+            "description": "Pydantic 모델과 페이지네이션 로직 유틸리티를 구현합니다",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 3
+          },
+          {
+            "id": 3,
+            "title": "검색 및 정렬 기능 구현",
+            "description": "리포지토리 검색과 정렬 기능을 구현합니다",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 3
+          },
+          {
+            "id": 4,
+            "title": "Repository 메타데이터 수집 로직",
+            "description": "Registry Client를 사용하여 리포지토리 정보를 수집합니다",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 3
+          },
+          {
+            "id": 5,
+            "title": "API 엔드포인트 및 응답 처리 구현",
+            "description": "GET /api/repositories 엔드포인트와 응답 처리를 구현합니다",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 3
+          },
+          {
+            "id": 6,
+            "title": "API 테스트 및 문서화",
+            "description": "pytest를 사용한 엔드포인트 테스트와 OpenAPI 문서화를 구현합니다",
+            "details": "",
+            "status": "done",
+            "dependencies": [],
+            "parentTaskId": 3
+          }
         ]
       },
       {
@@ -281,7 +337,7 @@
       "lastUpdated": "2025-01-07T10:00:00Z",
       "version": "1.0.0",
       "created": "2025-08-07T11:37:59.167Z",
-      "updated": "2025-08-07T13:46:49.861Z"
+      "updated": "2025-08-07T16:31:32.441Z"
     }
   }
 }

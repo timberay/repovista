@@ -198,3 +198,190 @@ def mock_httpx_client():
     client.__aenter__ = AsyncMock(return_value=client)
     client.__aexit__ = AsyncMock(return_value=None)
     return client
+
+
+# Additional fixtures for API testing
+
+@pytest.fixture
+def sample_repository_list():
+    """Sample repository list for API testing"""
+    return [
+        {
+            "name": "nginx",
+            "tag_count": 15,
+            "last_updated": datetime(2023, 12, 1, 12, 0, 0, tzinfo=timezone.utc),
+            "size_bytes": 142857600
+        },
+        {
+            "name": "ubuntu", 
+            "tag_count": 8,
+            "last_updated": datetime(2023, 11, 28, 10, 30, 0, tzinfo=timezone.utc),
+            "size_bytes": 72351744
+        },
+        {
+            "name": "library/postgres",
+            "tag_count": 12,
+            "last_updated": datetime(2023, 12, 2, 14, 15, 0, tzinfo=timezone.utc),
+            "size_bytes": 267534336
+        }
+    ]
+
+
+@pytest.fixture 
+def sample_repository_service():
+    """Mock repository service for API testing"""
+    from backend.services.repository_service import RepositoryService
+    from backend.models.schemas import PaginationResponse
+    
+    service = Mock(spec=RepositoryService)
+    
+    # Mock successful response for search_and_list_repositories
+    sample_data = [
+        {
+            "name": "nginx",
+            "tag_count": 15,
+            "last_updated": datetime(2023, 12, 1, 12, 0, 0, tzinfo=timezone.utc),
+            "size_bytes": 142857600
+        }
+    ]
+    
+    sample_pagination = PaginationResponse(
+        page=1,
+        page_size=20,
+        total_pages=1,
+        total_items=1,
+        has_next=False,
+        has_previous=False,
+        next_url=None,
+        previous_url=None
+    )
+    
+    service.search_and_list_repositories = AsyncMock(
+        return_value=(sample_data, sample_pagination)
+    )
+    service.get_search_suggestions = AsyncMock(
+        return_value=[{"name": "nginx", "match_score": 1.0, "match_type": "exact"}]
+    )
+    service.get_available_sort_fields = Mock(
+        return_value=["name", "tag_count", "last_updated"]
+    )
+    service.get_repository_stats = AsyncMock(
+        return_value={
+            "total_repositories": 1,
+            "total_tags": 15,
+            "average_tags_per_repo": 15.0,
+            "search_stats": {"total_searches": 0, "popular_terms": []}
+        }
+    )
+    
+    return service
+
+
+@pytest.fixture
+def sample_registry_errors():
+    """Sample registry errors for testing error handling"""
+    from backend.services.registry import (
+        RegistryException, RegistryAuthError, RegistryNotFoundError,
+        RegistryValidationError, RegistryConnectionError, RegistryTimeoutError
+    )
+    
+    return {
+        "auth_error": RegistryAuthError("Authentication failed"),
+        "not_found": RegistryNotFoundError("Repository not found"),
+        "validation_error": RegistryValidationError("Invalid data"),
+        "connection_error": RegistryConnectionError("Connection failed"),
+        "timeout_error": RegistryTimeoutError("Request timeout"),
+        "generic_error": RegistryException("Generic registry error")
+    }
+
+
+@pytest.fixture
+def api_test_client():
+    """FastAPI test client for API testing"""
+    from fastapi.testclient import TestClient
+    from backend.main import app
+    return TestClient(app)
+
+
+@pytest.fixture
+def sample_openapi_examples():
+    """Sample data for OpenAPI documentation examples"""
+    return {
+        "repository_list_response": {
+            "repositories": [
+                {
+                    "name": "nginx",
+                    "tag_count": 15,
+                    "last_updated": "2023-12-01T12:00:00Z",
+                    "size_bytes": 142857600
+                },
+                {
+                    "name": "ubuntu",
+                    "tag_count": 8, 
+                    "last_updated": "2023-11-28T10:30:00Z",
+                    "size_bytes": 72351744
+                }
+            ],
+            "pagination": {
+                "page": 1,
+                "page_size": 20,
+                "total_pages": 1,
+                "total_items": 2,
+                "has_next": False,
+                "has_previous": False,
+                "next_url": None,
+                "previous_url": None
+            }
+        },
+        "search_suggestions_response": [
+            {"name": "nginx", "match_score": 1.0, "match_type": "exact"},
+            {"name": "nginx-proxy", "match_score": 0.8, "match_type": "prefix"}
+        ],
+        "sort_fields_response": {
+            "available_fields": ["name", "tag_count", "last_updated"],
+            "field_info": {
+                "name": {"description": "Repository name", "type": "string"},
+                "tag_count": {"description": "Number of tags", "type": "integer"},
+                "last_updated": {"description": "Last update time", "type": "datetime"}
+            },
+            "default_field": "name",
+            "default_order": "asc"
+        },
+        "stats_response": {
+            "total_repositories": 42,
+            "total_tags": 158,
+            "average_tags_per_repo": 3.76,
+            "largest_repository": {"name": "ubuntu", "size_bytes": 267534336},
+            "most_recent_update": "2023-12-02T14:15:00Z",
+            "search_stats": {
+                "total_searches": 125,
+                "popular_terms": ["nginx", "postgres", "ubuntu"]
+            }
+        },
+        "error_responses": {
+            "400": {
+                "error": "ValidationError",
+                "message": "Invalid query parameters",
+                "status_code": 400,
+                "details": {"field": "page", "issue": "must be greater than 0"}
+            },
+            "401": {
+                "error": "RegistryAuthError", 
+                "message": "Authentication required",
+                "status_code": 401,
+                "details": {}
+            },
+            "404": {
+                "error": "RegistryNotFoundError",
+                "message": "Repository not found",
+                "status_code": 404,
+                "details": {}
+            },
+            "500": {
+                "error": "InternalServerError",
+                "message": "An unexpected error occurred",
+                "status_code": 500,
+                "details": {"original_error": "Database connection failed"}
+            }
+        }
+    }

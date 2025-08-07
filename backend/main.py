@@ -43,10 +43,9 @@ async def root() -> Dict[str, str]:
     """Root endpoint"""
     return {"message": "RepoVista API - Docker Registry Web UI Service"}
 
-# Import and include routers (to be added)
-# from api import repositories, tags
-# app.include_router(repositories.router, prefix="/api/repositories", tags=["repositories"])
-# app.include_router(tags.router, prefix="/api/tags", tags=["tags"])
+# Import and include routers
+from .api import repositories
+app.include_router(repositories.router, tags=["repositories"])
 
 if __name__ == "__main__":
     import uvicorn
