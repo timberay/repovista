@@ -1,0 +1,115 @@
+Docker Registry Web UI Service - Product Requirements Document
+
+PROJECT OVERVIEW
+RepoVista is a web-based user interface for Docker Registry that enables developers to easily browse, search, and select Docker images for deployment. The service provides an intuitive alternative to CLI-based registry management tools.
+
+BUSINESS OBJECTIVES
+- Provide developers with an efficient web interface to select Docker images for deployment
+- Improve the efficiency of image selection process
+- Deliver an intuitive and simple image browsing experience
+- Simplify the Docker image deployment workflow
+
+TARGET USERS
+- Primary: Developers who need to select and verify deployment images
+- Secondary: DevOps engineers monitoring image status
+- Tertiary: Team leads tracking team's image usage
+
+KEY FEATURES
+
+Feature: Repository Listing
+- Display all repositories from Docker Registry
+- Real-time search by repository name
+- Sort repositories by name and last update time (ascending/descending)
+- Pagination support (20/50/100 items per page)
+- Show tag count for each repository
+- Grid layout with repository cards
+
+Feature: Repository Details
+- Display all tags for selected repository
+- Show tag metadata: name, digest ID, image size, creation date
+- Search tags by name
+- Sort tags by name, creation date, or size
+- Accordion-style expansion for tag details
+- Generate and display pull commands
+
+Feature: Image Management
+- Generate Docker pull commands for selected images
+- Copy pull commands to clipboard with one click
+- Display detailed image information in accordion format
+- Read-only access to Docker Registry (no delete operations)
+
+TECHNICAL REQUIREMENTS
+
+Backend Architecture:
+- Python FastAPI framework
+- Docker Registry v2 API integration
+- Read-only registry access with authentication
+- RESTful API design
+- CORS configuration for frontend communication
+- Error handling with appropriate HTTP status codes
+- Response caching for performance
+
+Frontend Architecture:
+- Pure JavaScript (ES6+) without frameworks
+- HTML5 and CSS3
+- Fetch API for HTTP communication
+- Single-page application design
+- Event delegation for dynamic content
+- Responsive grid layout for repository cards
+- Accordion UI pattern for expandable details
+
+Deployment:
+- Docker containerization for both frontend and backend
+- Docker Compose for orchestration
+- Production-ready configuration
+- Auto-start on container launch
+- Environment-based configuration
+
+NON-FUNCTIONAL REQUIREMENTS
+- Chrome browser support (desktop)
+- Light theme UI design
+- Loading states for all async operations
+- Comprehensive error handling and user feedback
+- Sub-3 second page load time
+- Secure handling of registry credentials
+- No user authentication UI (server-side configuration only)
+
+SUCCESS CRITERIA
+- Developers can find and select images 50% faster than CLI
+- Zero downtime deployment with Docker Compose
+- All core features functional within 1 week development time
+- Clean, intuitive interface requiring no user training
+
+DEVELOPMENT MILESTONES
+
+Phase 1: Backend API Development (Days 1-2)
+- Set up FastAPI project structure
+- Implement Docker Registry v2 API client
+- Create repository listing endpoint
+- Create tag listing endpoint
+- Implement authentication handling
+- Add response caching
+
+Phase 2: Frontend Foundation (Days 3-4)
+- Create HTML page structure
+- Implement CSS styling with grid layout
+- Build JavaScript application core
+- Implement API communication layer
+- Create repository card components
+- Build accordion UI for tag details
+
+Phase 3: Core Features (Days 5-6)
+- Implement search functionality
+- Add sorting capabilities
+- Create pagination controls
+- Build pull command generation
+- Add clipboard copy functionality
+- Implement error handling and loading states
+
+Phase 4: Deployment (Day 7)
+- Create Docker configuration files
+- Set up Docker Compose orchestration
+- Perform integration testing
+- Fix bugs and optimize performance
+- Write deployment documentation
+- Deploy to production environment
