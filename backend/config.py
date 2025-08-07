@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Docker Registry Configuration
-    registry_url: str = "https://registry.example.com"
+    registry_url: str
     registry_username: str = ""
     registry_password: str = ""
     
@@ -18,11 +18,19 @@ class Settings(BaseSettings):
     api_host: str = "0.0.0.0"
     api_port: int = 8000
     
-    # CORS Configuration
-    cors_origins: List[str] = ["http://localhost"]
+    # Frontend Configuration
+    frontend_port: int = 80
+    
+    # CORS Configuration (will parse comma-separated string from env)
+    cors_origins: str = "http://localhost"
     
     # Logging
     log_level: str = "INFO"
+    
+    @property
+    def cors_origins_list(self) -> List[str]:
+        """Parse comma-separated CORS origins into list"""
+        return [origin.strip() for origin in self.cors_origins.split(",")]
     
     class Config:
         env_file = ".env"
