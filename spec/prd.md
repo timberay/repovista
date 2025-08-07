@@ -102,7 +102,7 @@
 ### 6.2 시스템 아키텍처
 
 ```
-[웹 브라우저 (Chrome)] ↔ [[웹 UI (JavaScript/HTML/CSS)] ↔ [API 서버]] ↔ [Docker Registry]
+[웹 브라우저 (Chrome)] ↔ [웹 UI (JavaScript/HTML/CSS)] ↔ [API 서버] ↔ [Docker Registry]
 ```
 
 ### 6.3 배포 환경
