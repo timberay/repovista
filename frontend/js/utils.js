@@ -181,6 +181,37 @@ App.Utils = (function() {
         },
 
         /**
+         * Generate Docker pull command with registry URL
+         */
+        async generatePullCommand(repositoryName, tagName = 'latest', registryUrl = null) {
+            try {
+                // Get registry URL if not provided
+                if (!registryUrl) {
+                    if (App.API) {
+                        const config = await App.API.getRegistryConfig();
+                        registryUrl = config.registry_url;
+                    }
+                }
+
+                // Clean up registry URL (remove protocol and trailing slash)
+                if (registryUrl) {
+                    registryUrl = registryUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
+                }
+
+                // Generate the pull command
+                const fullImageName = registryUrl ? 
+                    `${registryUrl}/${repositoryName}:${tagName}` : 
+                    `${repositoryName}:${tagName}`;
+
+                return `docker pull ${fullImageName}`;
+            } catch (error) {
+                console.error('Failed to generate pull command:', error);
+                // Fallback to basic command
+                return `docker pull ${repositoryName}:${tagName}`;
+            }
+        },
+
+        /**
          * Validate email address format
          */
         isValidEmail(email) {
@@ -358,9 +389,118 @@ App.Utils = (function() {
         },
 
         /**
+         * Toast notification system
+         */
+        toast: {
+            container: null,
+
+            // Initialize toast container
+            init() {
+                if (!this.container) {
+                    this.container = document.createElement('div');
+                    this.container.className = 'toast-container';
+                    this.container.style.cssText = `
+                        position: fixed;
+                        top: 20px;
+                        right: 20px;
+                        z-index: 10000;
+                        pointer-events: none;
+                    `;
+                    document.body.appendChild(this.container);
+                }
+            },
+
+            // Show toast notification
+            show(message, type = 'info', duration = 3000) {
+                this.init();
+
+                const toast = document.createElement('div');
+                toast.className = `toast toast-${type}`;
+                
+                // Base styles for all toasts
+                const baseStyles = `
+                    padding: 12px 16px;
+                    margin-bottom: 8px;
+                    border-radius: 6px;
+                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+                    color: white;
+                    font-size: 14px;
+                    line-height: 1.4;
+                    max-width: 300px;
+                    word-wrap: break-word;
+                    opacity: 0;
+                    transform: translateX(100%);
+                    transition: all 0.3s ease;
+                    pointer-events: auto;
+                `;
+
+                // Type-specific styles
+                const typeStyles = {
+                    success: 'background-color: #10b981;',
+                    error: 'background-color: #ef4444;',
+                    warning: 'background-color: #f59e0b;',
+                    info: 'background-color: #3b82f6;'
+                };
+
+                toast.style.cssText = baseStyles + (typeStyles[type] || typeStyles.info);
+                toast.textContent = message;
+
+                this.container.appendChild(toast);
+
+                // Animate in
+                setTimeout(() => {
+                    toast.style.opacity = '1';
+                    toast.style.transform = 'translateX(0)';
+                }, 10);
+
+                // Auto remove
+                setTimeout(() => {
+                    this.remove(toast);
+                }, duration);
+
+                // Allow manual removal on click
+                toast.addEventListener('click', () => this.remove(toast));
+
+                return toast;
+            },
+
+            // Remove toast with animation
+            remove(toast) {
+                if (toast && toast.parentNode) {
+                    toast.style.opacity = '0';
+                    toast.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (toast.parentNode) {
+                            toast.parentNode.removeChild(toast);
+                        }
+                    }, 300);
+                }
+            },
+
+            // Convenience methods
+            success(message, duration) {
+                return this.show(message, 'success', duration);
+            },
+
+            error(message, duration) {
+                return this.show(message, 'error', duration);
+            },
+
+            warning(message, duration) {
+                return this.show(message, 'warning', duration);
+            },
+
+            info(message, duration) {
+                return this.show(message, 'info', duration);
+            }
+        },
+
+        /**
          * Initialize utility module
          */
         init() {
+            // Initialize toast system
+            this.toast.init();
             console.log('Utils module initialized');
         }
     };

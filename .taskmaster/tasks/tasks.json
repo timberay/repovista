@@ -599,13 +599,70 @@
         "id": 13,
         "title": "Implement pull command generation and clipboard copy",
         "description": "Generate Docker pull commands and implement clipboard copy functionality",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "details": "Generate pull commands with registry URL and tag. Create copy button with visual feedback. Implement clipboard API with fallback. Show success notification on copy. Handle long registry URLs gracefully.",
         "testStrategy": "Test command generation accuracy, verify clipboard functionality, test fallback for older browsers, check visual feedback",
         "dependencies": [
           4,
           9
+        ],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Docker pull 명령어 생성 로직 구현",
+            "description": "저장소 이름과 태그를 조합하여 올바른 Docker pull 명령어를 생성하는 함수 구현",
+            "dependencies": [],
+            "details": "레지스트리 URL, 저장소 이름, 태그를 받아서 `docker pull registry.example.com/repo:tag` 형식의 명령어 생성. 태그가 없는 경우 latest 태그 사용. 긴 URL의 경우 줄바꿈 처리 고려",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "클립보드 API 구현 및 브라우저 호환성 처리",
+            "description": "Clipboard API를 사용한 복사 기능 구현 및 구형 브라우저를 위한 폴백 메커니즘 추가",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "navigator.clipboard.writeText() 사용하여 텍스트 복사. API 지원하지 않는 브라우저를 위해 document.execCommand('copy') 폴백 구현. 복사 권한 처리 및 에러 핸들링 추가",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "복사 버튼 UI 컴포넌트 구현",
+            "description": "각 태그 카드에 복사 버튼을 추가하고 시각적 피드백 시스템 구현",
+            "dependencies": [
+              "13.1"
+            ],
+            "details": "태그 카드 내 복사 아이콘 버튼 추가. 호버 상태 스타일링. 복사 성공 시 아이콘 변경 (예: 체크마크). 2초 후 원래 아이콘으로 복원. 버튼 비활성화 상태 처리",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "복사 성공/실패 알림 시스템 구현",
+            "description": "사용자에게 복사 작업의 성공 또는 실패를 알리는 토스트 알림 구현",
+            "dependencies": [
+              "13.2",
+              "13.3"
+            ],
+            "details": "화면 상단 또는 하단에 토스트 메시지 표시. 성공 시 '명령어가 클립보드에 복사되었습니다' 메시지. 실패 시 에러 메시지와 수동 복사 안내. 3초 후 자동 사라짐 애니메이션",
+            "status": "done",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "긴 명령어 처리 및 UI 최적화",
+            "description": "긴 레지스트리 URL을 가진 명령어의 표시 및 복사 처리 최적화",
+            "dependencies": [
+              "13.1",
+              "13.3"
+            ],
+            "details": "명령어 표시 영역에 가로 스크롤 또는 줄바꿈 처리. 복사 시 전체 명령어가 정확히 복사되도록 보장. 툴팁으로 전체 명령어 미리보기 제공. 모바일에서도 사용 가능하도록 터치 이벤트 처리",
+            "status": "done",
+            "testStrategy": ""
+          }
         ]
       },
       {
@@ -620,6 +677,84 @@
           3,
           4,
           13
+        ],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "백엔드 Dockerfile 생성",
+            "description": "FastAPI 애플리케이션을 위한 프로덕션용 Dockerfile을 생성하고 Python 종속성 관리 및 최적화를 구현합니다",
+            "dependencies": [],
+            "details": "Python 3.11+ 베이스 이미지 사용. 멀티스테이지 빌드로 이미지 크기 최적화. requirements.txt 먼저 복사하여 레이어 캐싱 활용. 비루트 사용자로 실행. uvicorn 서버 설정 포함. PYTHONUNBUFFERED=1 설정.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "프론트엔드 Dockerfile 및 nginx 설정",
+            "description": "정적 파일 서빙을 위한 nginx 기반 프론트엔드 Dockerfile을 생성하고 프로덕션 설정을 구현합니다",
+            "dependencies": [],
+            "details": "nginx:alpine 베이스 이미지 사용. 커스텀 nginx.conf 작성하여 SPA 라우팅 지원. gzip 압축 활성화. 캐시 헤더 설정. /api 경로를 백엔드로 프록시. 보안 헤더 추가.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "docker-compose.yml 기본 구성",
+            "description": "백엔드와 프론트엔드 서비스를 정의하는 docker-compose.yml 파일을 생성하고 기본 오케스트레이션을 설정합니다",
+            "dependencies": [
+              "14.1",
+              "14.2"
+            ],
+            "details": "version 3.8 사용. backend와 frontend 서비스 정의. 빌드 컨텍스트 설정. 포트 매핑 (백엔드 8000, 프론트엔드 80). restart: unless-stopped 정책. 서비스 간 의존성 설정.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "Docker 네트워크 및 볼륨 설정",
+            "description": "컨테이너 간 통신을 위한 커스텀 네트워크와 데이터 영속성을 위한 볼륨을 구성합니다",
+            "dependencies": [
+              "14.3"
+            ],
+            "details": "커스텀 브리지 네트워크 생성. 서비스 간 내부 DNS 해결 설정. 로그 볼륨 구성. 임시 캐시 볼륨 설정. 네트워크 격리 및 보안 설정.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "환경 변수 구성 및 관리",
+            "description": ".env 파일 템플릿과 docker-compose에서의 환경 변수 주입을 구현합니다",
+            "dependencies": [
+              "14.3"
+            ],
+            "details": ".env.example 파일 생성. REGISTRY_URL, REGISTRY_USERNAME, REGISTRY_PASSWORD 변수 정의. API_PORT, FRONTEND_PORT 설정. docker-compose에서 env_file 사용. 시크릿 관리 모범 사례 적용.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "헬스체크 구현",
+            "description": "각 서비스의 헬스체크를 구성하여 컨테이너 상태 모니터링과 자동 복구를 구현합니다",
+            "dependencies": [
+              "14.3"
+            ],
+            "details": "백엔드 /health 엔드포인트 구현. nginx 헬스체크 설정. docker-compose에 healthcheck 블록 추가. 간격, 타임아웃, 재시도 설정. 의존 서비스 대기 조건 설정.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "Docker 이미지 최적화 및 보안 강화",
+            "description": "이미지 크기 최소화와 보안 모범 사례를 적용하여 프로덕션 준비 상태로 최적화합니다",
+            "dependencies": [
+              "14.1",
+              "14.2",
+              "14.6"
+            ],
+            "details": ".dockerignore 파일 생성. 불필요한 패키지 제거. 보안 스캐닝 설정. 레이어 최적화. 캐시 마운트 활용. 시크릿 빌드 인자 사용. 최소 권한 원칙 적용.",
+            "status": "pending",
+            "testStrategy": ""
+          }
         ]
       },
       {
@@ -642,7 +777,7 @@
       "lastUpdated": "2025-01-07T10:00:00Z",
       "version": "1.0.0",
       "created": "2025-08-07T11:37:59.167Z",
-      "updated": "2025-08-08T13:32:28.818Z"
+      "updated": "2025-08-08T13:39:02.326Z"
     }
   }
 }

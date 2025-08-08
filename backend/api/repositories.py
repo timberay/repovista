@@ -338,6 +338,24 @@ async def get_sort_fields(
 
 
 @router.get(
+    "/config",
+    response_model=Dict[str, str],
+    summary="Get registry configuration",
+    description="Get public registry configuration for pull command generation"
+)
+async def get_registry_config() -> Dict[str, str]:
+    """
+    Get public registry configuration
+    
+    Returns:
+        Dictionary with public registry configuration
+    """
+    return {
+        "registry_url": settings.registry_url
+    }
+
+
+@router.get(
     "/stats",
     response_model=Dict[str, Any],
     summary="Get repository statistics",

@@ -268,6 +268,34 @@ App.API = (function() {
         },
 
         /**
+         * Get registry configuration for pull command generation
+         */
+        async getRegistryConfig() {
+            const url = `${apiConfig.baseUrl}/repositories/config`;
+            
+            try {
+                const cacheKey = 'registry:config';
+                const cached = App.State ? App.State.getCache(cacheKey) : null;
+                
+                if (cached) {
+                    return cached;
+                }
+
+                const data = await httpClient.requestWithRetry(url);
+                
+                // Cache the configuration for a longer time
+                if (App.State) {
+                    App.State.setCache(cacheKey, data, 1800000); // 30 minutes
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Failed to fetch registry config:', error);
+                throw new Error(`Failed to load registry configuration: ${error.message}`);
+            }
+        },
+
+        /**
          * Clear API cache
          */
         clearCache(pattern = null) {

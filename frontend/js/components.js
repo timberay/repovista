@@ -130,11 +130,71 @@
     const TagItem = (props) => {
         const { tag, repository, onSelect, onCopy } = props;
         
-        const pullCommand = `docker pull ${repository}:${tag.name}`;
+        // State for pull command (will be updated with registry URL)
+        let displayCommand = `docker pull ${repository}:${tag.name}`;
         const sizeFormatted = formatBytes(tag.size || 0);
         const createdDate = tag.created 
             ? new Date(tag.created).toLocaleDateString()
             : 'Unknown';
+
+        // Enhanced copy functionality with visual feedback
+        const handleCopyClick = async (e) => {
+            e.stopPropagation();
+            
+            const button = e.currentTarget;
+            const copyIcon = button.querySelector('.copy-icon');
+            const copyText = button.querySelector('.copy-text');
+            
+            // Disable button temporarily
+            button.disabled = true;
+            
+            try {
+                // Generate proper pull command with registry URL
+                let fullPullCommand;
+                if (App.Utils && App.Utils.generatePullCommand) {
+                    fullPullCommand = await App.Utils.generatePullCommand(repository, tag.name);
+                } else {
+                    fullPullCommand = pullCommand;
+                }
+                
+                // Copy to clipboard
+                const success = await App.Utils.copyToClipboard(fullPullCommand);
+                
+                if (success) {
+                    // Visual feedback - change to checkmark
+                    if (copyIcon) copyIcon.textContent = '✅';
+                    if (copyText) copyText.textContent = 'Copied!';
+                    
+                    // Show success toast
+                    if (App.Utils && App.Utils.toast) {
+                        App.Utils.toast.success('Docker pull command copied to clipboard!');
+                    }
+                    
+                    // Reset after 2 seconds
+                    setTimeout(() => {
+                        if (copyIcon) copyIcon.textContent = '📋';
+                        if (copyText) copyText.textContent = 'Copy';
+                        button.disabled = false;
+                    }, 2000);
+                    
+                    // Call original onCopy callback if provided
+                    if (onCopy) onCopy(fullPullCommand);
+                } else {
+                    throw new Error('Clipboard API failed');
+                }
+                
+            } catch (error) {
+                console.error('Copy failed:', error);
+                
+                // Show error toast with fallback instructions
+                if (App.Utils && App.Utils.toast) {
+                    App.Utils.toast.error('Failed to copy. Please select and copy manually.');
+                }
+                
+                // Reset button
+                button.disabled = false;
+            }
+        };
 
         return h('div', {
             className: 'tag-item',
@@ -158,17 +218,18 @@
             ),
             
             h('div', { className: 'tag-command' },
-                h('code', { className: 'pull-command' },
-                    App.text(pullCommand)
+                h('code', { 
+                    className: 'pull-command',
+                    style: 'word-break: break-all; overflow-wrap: anywhere; white-space: pre-wrap;'
+                },
+                    App.text(displayCommand)
                 ),
                 h('button', {
                     className: 'copy-button',
-                    'data-copy-text': pullCommand,
-                    onClick: (e) => {
-                        e.stopPropagation();
-                        onCopy && onCopy(pullCommand);
-                    },
-                    'aria-label': 'Copy pull command'
+                    'data-copy-text': displayCommand,
+                    onClick: handleCopyClick,
+                    'aria-label': 'Copy pull command',
+                    title: 'Copy Docker pull command'
                 },
                     h('span', { className: 'copy-icon' }, '📋'),
                     h('span', { className: 'copy-text' }, 
