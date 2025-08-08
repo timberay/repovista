@@ -1,0 +1,59 @@
+version: '3.8'
+
+# Production-specific overrides
+services:
+  backend:
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      - APP_ENV=production
+      - DEBUG=false
+      - LOG_LEVEL=${LOG_LEVEL:-WARNING}
+    labels:
+      - "com.repovista.service=backend"
+      - "com.repovista.environment=production"
+
+  frontend:
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M
+        reservations:
+          cpus: '0.25'
+          memory: 128M
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    labels:
+      - "com.repovista.service=frontend"
+      - "com.repovista.environment=production"
+
+# Production volumes with specific drivers and options
+volumes:
+  backend-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/log/repovista/backend
+  
+  nginx-logs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /var/log/repovista/nginx

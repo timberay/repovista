@@ -1,0 +1,103 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.py[cod]
+*$py.class
+*.so
+.coverage
+.pytest_cache/
+htmlcov/
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Virtual environment
+venv/
+env/
+ENV/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation
+*.md
+docs/
+spec/
+README*
+LICENSE
+CHANGELOG*
+
+# Development files
+.env
+.env.local
+.env.*.local
+*.log
+*.pid
+*.seed
+*.pid.lock
+
+# Test files
+tests/
+test/
+*_test.py
+test_*.py
+
+# Docker files
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Task Master files
+.taskmaster/
+.claude/
+CLAUDE.md
+.mcp.json
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+
+# Archives
+*.tar
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Security sensitive files
+*.key
+*.pem
+*.crt
+*.p12
+secrets/
+credentials/
