@@ -423,6 +423,84 @@
         "testStrategy": "Test API calls with mock server, verify error handling, test loading state transitions, check debounce functionality",
         "dependencies": [
           8
+        ],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "Fetch 래퍼 함수 생성",
+            "description": "재사용 가능한 fetch 래퍼 함수를 생성하여 공통 설정과 에러 처리를 중앙화",
+            "dependencies": [],
+            "details": "api.js 파일에 기본 fetch 래퍼 생성. Accept 헤더, Content-Type 설정. 타임아웃 처리 구현. 응답 상태 코드 검증. JSON 파싱 자동화.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "API 엔드포인트 메서드 구현",
+            "description": "레포지토리와 태그 관련 API 호출을 위한 구체적인 메서드 생성",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "getRepositories() 메서드 구현 (페이지네이션, 검색 파라미터 포함). getRepositoryTags() 메서드 구현. API 베이스 URL 설정. 쿼리 파라미터 빌더 함수 작성.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "요청/응답 인터셉터 구현",
+            "description": "API 요청과 응답을 가로채어 공통 처리 로직을 적용하는 인터셉터 시스템 구축",
+            "dependencies": [
+              "9.1"
+            ],
+            "details": "요청 인터셉터로 인증 토큰 자동 추가. 응답 인터셉터로 에러 변환 및 로깅. 요청/응답 데이터 변환 로직. 디버그 모드 로깅 옵션.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "에러 처리 전략 구현",
+            "description": "다양한 API 에러 상황에 대한 체계적인 처리 방안 구축",
+            "dependencies": [
+              "9.1",
+              "9.3"
+            ],
+            "details": "커스텀 에러 클래스 생성 (ApiError, NetworkError, AuthError). HTTP 상태 코드별 에러 처리. 네트워크 연결 실패 처리. 사용자 친화적 에러 메시지 매핑.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "로딩 상태 관리 시스템",
+            "description": "API 호출 중 로딩 상태를 추적하고 UI에 반영하는 시스템 구현",
+            "dependencies": [
+              "9.2"
+            ],
+            "details": "전역 로딩 상태 관리자 생성. 동시 요청 카운터 구현. 로딩 시작/종료 이벤트 발생. 최소 로딩 시간 보장 옵션.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 6,
+            "title": "디바운싱 구현",
+            "description": "검색 입력에 대한 API 호출을 최적화하기 위한 디바운싱 로직 구현",
+            "dependencies": [
+              "9.2"
+            ],
+            "details": "디바운스 유틸리티 함수 생성. 검색 API 호출에 300ms 지연 적용. 이전 요청 취소 로직. AbortController를 사용한 요청 중단.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 7,
+            "title": "재시도 로직 구현",
+            "description": "네트워크 실패나 일시적 오류에 대한 자동 재시도 메커니즘 구축",
+            "dependencies": [
+              "9.4"
+            ],
+            "details": "지수 백오프 알고리즘 구현. 최대 재시도 횟수 설정 (3회). 재시도 가능한 에러 타입 정의. 재시도 상태 UI 피드백.",
+            "status": "pending",
+            "testStrategy": ""
+          }
         ]
       },
       {
