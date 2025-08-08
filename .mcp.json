@@ -14,6 +14,10 @@
 				"AZURE_OPENAI_API_KEY": "",
 				"OLLAMA_API_KEY": ""
 			}
+		},
+		"playwright": {
+			"command": "npx",
+			"args": ["-y", "@playwright/mcp"]
 		}
 	}
 }

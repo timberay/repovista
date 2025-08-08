@@ -9,16 +9,19 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Technology Stack
 
 ### Backend
+
 - **Language**: Python with FastAPI
 - **API**: Docker Registry v2 API client
 - **Authentication**: Read-only access to Docker Registry
 
 ### Frontend
+
 - **Pure JavaScript** (ES6+) - No frameworks
 - **HTML5 & CSS3**
 - **Fetch API** for HTTP communication
 
 ### Deployment
+
 - Docker & Docker Compose
 - Production-ready configuration (no dev/prod separation)
 
@@ -43,7 +46,7 @@ pytest tests/test_api.py -v  # Run specific test file
 
 ## Project Structure
 
-```
+```ini
 repovista/
 ├── backend/
 │   ├── main.py              # FastAPI application entry point
@@ -79,24 +82,28 @@ repovista/
 ## Key Implementation Notes
 
 ### API Design
+
 - RESTful endpoints following Docker Registry v2 API patterns
 - CORS configuration for frontend-backend communication
 - Error handling with appropriate HTTP status codes
 - Pagination support with limit/offset parameters
 
 ### Frontend Architecture
+
 - Single-page application using vanilla JavaScript
 - Accordion-style UI for repository details
 - Event delegation for dynamic content
 - Fetch API with proper error handling and loading states
 
 ### Docker Registry Integration
+
 - Use `python-registry-client` or direct HTTP requests to Registry v2 API
 - Handle authentication headers for private registries
 - Cache registry responses appropriately
 - Implement retry logic for network failures
 
 ### UI/UX Requirements
+
 - Clean, intuitive design with light theme
 - Repository cards in grid layout
 - Accordion expansion for tag details
@@ -123,18 +130,21 @@ repovista/
 ## Development Guidelines
 
 ### Code Style
+
 - Python: Follow PEP 8, use type hints
 - JavaScript: ES6+ features, async/await for API calls
 - CSS: BEM methodology for class naming
 - Consistent error handling patterns
 
 ### Security Considerations
+
 - Read-only access to Docker Registry
 - No authentication UI (server-side configuration)
 - Validate and sanitize all user inputs
 - Use environment variables for registry configuration
 
 ### Performance Optimization
+
 - Implement caching for registry responses
 - Lazy loading for large tag lists
 - Debounce search input
@@ -152,11 +162,13 @@ FRONTEND_PORT=80
 ```
 
 ## Testing Strategy
+
 - Unit tests for API endpoints and services
 - Integration tests for Registry communication
 - Manual testing for UI interactions
 - Test with different registry configurations
 
 ## Task Master AI Instructions
+
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
