@@ -1,0 +1,31 @@
+{
+  "name": "repovista-e2e-tests",
+  "version": "1.0.0",
+  "description": "End-to-end tests for RepoVista Docker Registry UI",
+  "scripts": {
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "test:unit:backend": "cd backend && python -m pytest -v",
+    "test:coverage:backend": "cd backend && python -m pytest --cov=. --cov-report=html --cov-report=term",
+    "test:perf": "k6 run performance-tests/load-test.js",
+    "test:all": "npm run test:unit:backend && npm run test:e2e",
+    "playwright:install": "playwright install",
+    "playwright:install-deps": "playwright install-deps"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.40.0"
+  },
+  "keywords": [
+    "docker",
+    "registry",
+    "ui",
+    "testing",
+    "e2e",
+    "playwright"
+  ],
+  "author": "",
+  "license": "MIT"
+}

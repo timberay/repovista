@@ -2,14 +2,16 @@
 Repository listing API endpoints
 """
 
-from fastapi import APIRouter, Depends, Query, HTTPException, status
+from fastapi import APIRouter, Depends, Query, HTTPException, status, Request, Response
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 import logging
+import json
 
 from ..services.registry import RegistryClient, RegistryException
 from ..services.repository_service import RepositoryService, create_repository_service
+from ..services.cache import cache_service, etag_cache, cache_result
 from ..models.schemas import (
     RepositoryInfo, PaginationInfo, PaginationRequest, 
     PaginationResponse, SortRequest, SearchRequest
@@ -139,6 +141,7 @@ async def get_repository_service(
     response_model=RepositoryListResponse,
     responses={
         200: {"description": "Successful response", "model": RepositoryListResponse},
+        304: {"description": "Not Modified (ETag match)", "model": None},
         400: {"description": "Bad request", "model": ErrorResponse},
         401: {"description": "Authentication required", "model": ErrorResponse},
         403: {"description": "Permission denied", "model": ErrorResponse},
@@ -149,6 +152,8 @@ async def get_repository_service(
     description="Get a paginated list of repositories with optional search and sorting"
 )
 async def list_repositories(
+    request: Request,
+    response: Response,
     search: Optional[str] = Query(None, description="Search term to filter repository names"),
     sort_by: Optional[str] = Query("name", description="Field to sort by (name, tag_count, last_updated, relevance)"),
     sort_order: Optional[str] = Query("asc", description="Sort order (asc, desc)"),
@@ -161,6 +166,8 @@ async def list_repositories(
     List repositories from Docker Registry with pagination, search, and sorting
     
     Args:
+        request: FastAPI request object
+        response: FastAPI response object
         search: Optional search term to filter repository names
         sort_by: Field to sort by (name, tag_count, last_updated, relevance)
         sort_order: Sort order (asc, desc)
@@ -178,6 +185,38 @@ async def list_repositories(
     try:
         # Validate pagination parameters
         validate_pagination_params(page, page_size)
+        
+        # Generate cache key
+        cache_key_params = {
+            "search": search,
+            "sort_by": sort_by,
+            "sort_order": sort_order,
+            "page": page,
+            "page_size": page_size,
+            "include_metadata": include_metadata
+        }
+        cache_key = cache_service._get_cache_key("repositories", cache_key_params)
+        
+        # Check ETag support
+        client_etag = request.headers.get("if-none-match")
+        if client_etag:
+            is_valid = await etag_cache.validate_etag(cache_key, client_etag)
+            if is_valid:
+                # Return 304 Not Modified
+                response.status_code = status.HTTP_304_NOT_MODIFIED
+                return Response(status_code=status.HTTP_304_NOT_MODIFIED)
+        
+        # Check cache
+        cached_result = await cache_service.get(cache_key)
+        if cached_result is not None:
+            # Generate and set ETag for cached result
+            etag = etag_cache.generate_etag(cached_result)
+            await etag_cache.set_etag(cache_key, etag)
+            response.headers["etag"] = etag
+            response.headers["x-cache"] = "HIT"
+            response.headers["cache-control"] = "public, max-age=60"
+            
+            return RepositoryListResponse(**cached_result)
         
         # Create request objects
         search_req = SearchRequest(search=search)
@@ -203,10 +242,23 @@ async def list_repositories(
             )
             repo_responses.append(repo_response)
         
-        return RepositoryListResponse(
+        result = RepositoryListResponse(
             repositories=repo_responses,
             pagination=pagination_response
         )
+        
+        # Cache the result
+        result_dict = result.dict()
+        await cache_service.set(cache_key, result_dict, ttl=60 if include_metadata else 300)
+        
+        # Generate and set ETag
+        etag = etag_cache.generate_etag(result_dict)
+        await etag_cache.set_etag(cache_key, etag)
+        response.headers["etag"] = etag
+        response.headers["x-cache"] = "MISS"
+        response.headers["cache-control"] = "public, max-age=60"
+        
+        return result
         
     except RegistryException as e:
         # Map registry exceptions to HTTP exceptions

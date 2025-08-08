@@ -5,12 +5,31 @@ Main FastAPI application entry point
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import os
+import asyncio
 from typing import Dict
 
 # Load environment variables
 load_dotenv()
+
+# Import cache service for cleanup task
+from .services.cache import cache_service, periodic_cache_cleanup
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Manage application lifespan - startup and shutdown"""
+    # Startup
+    cleanup_task = asyncio.create_task(periodic_cache_cleanup(60))
+    print("Started cache cleanup task")
+    
+    yield
+    
+    # Shutdown
+    cleanup_task.cancel()
+    await cache_service.clear()
+    print("Cleaned up cache and stopped background tasks")
 
 # Create FastAPI application
 app = FastAPI(
@@ -18,7 +37,8 @@ app = FastAPI(
     description="Docker Registry Web UI Service API",
     version="1.0.0",
     docs_url="/api/docs",
-    redoc_url="/api/redoc"
+    redoc_url="/api/redoc",
+    lifespan=lifespan
 )
 
 # Configure CORS
@@ -36,6 +56,20 @@ app.add_middleware(
 async def health_check() -> Dict[str, str]:
     """Health check endpoint"""
     return {"status": "healthy", "service": "RepoVista API"}
+
+# Cache stats endpoint
+@app.get("/api/cache/stats")
+async def cache_stats() -> Dict[str, any]:
+    """Get cache statistics"""
+    stats = await cache_service.get_stats()
+    return stats
+
+# Clear cache endpoint (for manual refresh)
+@app.post("/api/cache/clear")
+async def clear_cache(pattern: str = None) -> Dict[str, any]:
+    """Clear cache entries"""
+    count = await cache_service.clear(pattern)
+    return {"cleared": count, "pattern": pattern}
 
 # Root endpoint
 @app.get("/")
