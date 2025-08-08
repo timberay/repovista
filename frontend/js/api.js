@@ -85,6 +85,34 @@ App.API = (function() {
         }
     };
 
+    // Debounce utility for search operations
+    const debounceTimers = new Map();
+    
+    function debounce(key, fn, delay = 300) {
+        return function(...args) {
+            // Cancel previous timer for this key
+            if (debounceTimers.has(key)) {
+                clearTimeout(debounceTimers.get(key));
+            }
+            
+            // Set new timer
+            return new Promise((resolve, reject) => {
+                const timerId = setTimeout(async () => {
+                    try {
+                        const result = await fn.apply(this, args);
+                        debounceTimers.delete(key);
+                        resolve(result);
+                    } catch (error) {
+                        debounceTimers.delete(key);
+                        reject(error);
+                    }
+                }, delay);
+                
+                debounceTimers.set(key, timerId);
+            });
+        };
+    }
+
     return {
         /**
          * Configure API settings
@@ -221,6 +249,11 @@ App.API = (function() {
         },
 
         /**
+         * Debounced search repositories - optimized for real-time search input
+         */
+        searchRepositoriesDebounced: null, // Will be initialized with debounce function
+
+        /**
          * Get API health/status
          */
         async getHealth() {
@@ -244,6 +277,16 @@ App.API = (function() {
         },
 
         /**
+         * Cancel pending debounced requests
+         */
+        cancelDebouncedRequests() {
+            debounceTimers.forEach((timerId, key) => {
+                clearTimeout(timerId);
+            });
+            debounceTimers.clear();
+        },
+
+        /**
          * Get current API configuration
          */
         getConfig() {
@@ -254,6 +297,9 @@ App.API = (function() {
          * Initialize API module
          */
         init() {
+            // Initialize debounced search method
+            this.searchRepositoriesDebounced = debounce('search', this.searchRepositories.bind(this), 300);
+
             // Configure based on app configuration
             if (App.Core) {
                 const appConfig = App.Core.getConfig();

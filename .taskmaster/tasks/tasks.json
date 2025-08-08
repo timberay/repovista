@@ -417,7 +417,7 @@
         "id": 9,
         "title": "Implement API communication layer",
         "description": "Create JavaScript API client using Fetch API with error handling and loading states",
-        "status": "pending",
+        "status": "done",
         "priority": "high",
         "details": "Create api.js with fetch wrapper functions. Implement methods for repository and tag endpoints. Add request/response interceptors. Handle loading states and errors. Implement request debouncing for search.",
         "testStrategy": "Test API calls with mock server, verify error handling, test loading state transitions, check debounce functionality",
@@ -431,7 +431,7 @@
             "description": "재사용 가능한 fetch 래퍼 함수를 생성하여 공통 설정과 에러 처리를 중앙화",
             "dependencies": [],
             "details": "api.js 파일에 기본 fetch 래퍼 생성. Accept 헤더, Content-Type 설정. 타임아웃 처리 구현. 응답 상태 코드 검증. JSON 파싱 자동화.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -442,7 +442,7 @@
               "9.1"
             ],
             "details": "getRepositories() 메서드 구현 (페이지네이션, 검색 파라미터 포함). getRepositoryTags() 메서드 구현. API 베이스 URL 설정. 쿼리 파라미터 빌더 함수 작성.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -453,7 +453,7 @@
               "9.1"
             ],
             "details": "요청 인터셉터로 인증 토큰 자동 추가. 응답 인터셉터로 에러 변환 및 로깅. 요청/응답 데이터 변환 로직. 디버그 모드 로깅 옵션.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -465,7 +465,7 @@
               "9.3"
             ],
             "details": "커스텀 에러 클래스 생성 (ApiError, NetworkError, AuthError). HTTP 상태 코드별 에러 처리. 네트워크 연결 실패 처리. 사용자 친화적 에러 메시지 매핑.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -476,7 +476,7 @@
               "9.2"
             ],
             "details": "전역 로딩 상태 관리자 생성. 동시 요청 카운터 구현. 로딩 시작/종료 이벤트 발생. 최소 로딩 시간 보장 옵션.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -487,7 +487,7 @@
               "9.2"
             ],
             "details": "디바운스 유틸리티 함수 생성. 검색 API 호출에 300ms 지연 적용. 이전 요청 취소 로직. AbortController를 사용한 요청 중단.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -498,7 +498,7 @@
               "9.4"
             ],
             "details": "지수 백오프 알고리즘 구현. 최대 재시도 횟수 설정 (3회). 재시도 가능한 에러 타입 정의. 재시도 상태 UI 피드백.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -513,6 +513,62 @@
         "testStrategy": "Test search with various inputs, verify debounce timing, check result accuracy, test clear functionality",
         "dependencies": [
           9
+        ],
+        "subtasks": [
+          {
+            "id": 1,
+            "title": "검색 입력 필드 및 이벤트 핸들러 구현",
+            "description": "검색 입력 필드를 생성하고 실시간 입력 이벤트를 처리하는 핸들러를 구현합니다",
+            "dependencies": [],
+            "details": "index.html에 검색 입력 필드 추가. app.js에 입력 이벤트 리스너 설정. 검색어 검증 및 정규화 로직 구현. 빈 검색어 처리 및 특수문자 이스케이프 적용.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 2,
+            "title": "디바운스 유틸리티 함수 구현",
+            "description": "검색 입력에 대한 디바운스 기능을 구현하여 불필요한 API 호출을 방지합니다",
+            "dependencies": [
+              "10.1"
+            ],
+            "details": "utils.js에 디바운스 함수 작성 (300-500ms 지연). 검색 입력 핸들러에 디바운스 적용. 이전 타이머 취소 로직 구현. 즉시 실행 옵션 추가.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 3,
+            "title": "검색 상태 관리 시스템 구축",
+            "description": "검색어와 결과를 관리하는 상태 관리 시스템을 구현합니다",
+            "dependencies": [
+              "10.1",
+              "10.2"
+            ],
+            "details": "전역 검색 상태 객체 생성. URL 파라미터와 동기화 로직 구현. 페이지 새로고침 시 상태 복원. 검색 히스토리 관리 (선택사항).",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 4,
+            "title": "검색 결과 UI 업데이트 및 필터링",
+            "description": "검색 결과에 따라 동적으로 UI를 업데이트하고 필터링된 결과를 표시합니다",
+            "dependencies": [
+              "10.3"
+            ],
+            "details": "리포지토리 카드 필터링 로직 구현. 검색 결과 개수 표시. 결과 없음 메시지 처리. 하이라이트 기능으로 검색어 강조. 태그 레벨 검색 지원.",
+            "status": "pending",
+            "testStrategy": ""
+          },
+          {
+            "id": 5,
+            "title": "검색 초기화 및 리셋 기능 구현",
+            "description": "검색을 초기화하고 전체 목록으로 돌아가는 기능을 구현합니다",
+            "dependencies": [
+              "10.4"
+            ],
+            "details": "검색 초기화 버튼 추가 (X 아이콘). 초기화 시 전체 목록 복원. URL 파라미터 제거. 검색 입력 필드 비우기. 스크롤 위치 유지 또는 상단 이동 옵션.",
+            "status": "pending",
+            "testStrategy": ""
+          }
         ]
       },
       {
@@ -586,7 +642,7 @@
       "lastUpdated": "2025-01-07T10:00:00Z",
       "version": "1.0.0",
       "created": "2025-08-07T11:37:59.167Z",
-      "updated": "2025-08-08T13:19:17.125Z"
+      "updated": "2025-08-08T13:32:28.818Z"
     }
   }
 }
