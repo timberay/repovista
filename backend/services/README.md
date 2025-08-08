@@ -41,12 +41,14 @@ RegistryClient
 ## Data Models
 
 ### Core Models
+
 - `RegistryClient`: Main client class
 - `AuthChallenge`: WWW-Authenticate header parsing
 - `BearerToken`: Authentication token response
 - `RegistryErrorResponse`: Error response wrapper
 
 ### API Response Models
+
 - `RepositoryCatalog`: Repository listing response
 - `TagsList`: Tag listing response  
 - `ManifestV2`: Docker image manifest
@@ -55,7 +57,8 @@ RegistryClient
 - `PaginationInfo`: Pagination state
 
 ### Exception Hierarchy
-```
+
+```text
 RegistryException (base)
 ├── RegistryAuthError (401, authentication issues)
 ├── RegistryNotFoundError (404, missing resources)
@@ -66,6 +69,7 @@ RegistryException (base)
 ## Configuration
 
 ### Client Initialization
+
 ```python
 client = RegistryClient(
     registry_url="https://registry.example.com",
@@ -79,11 +83,13 @@ client = RegistryClient(
 ```
 
 ### Authentication Methods
+
 1. **Bearer Token**: Primary method using OAuth2-like flow
 2. **Basic Auth**: Fallback for simple authentication
 3. **Anonymous**: For public registries
 
 ### Retry Strategy
+
 - **Max Retries**: Configurable (default: 3)
 - **Backoff**: Exponential (delay * 2^attempt)
 - **Circuit Breaker**: 5 failures trigger 60s timeout
@@ -91,6 +97,7 @@ client = RegistryClient(
 ## Usage Patterns
 
 ### Basic Usage
+
 ```python
 async with RegistryClient(registry_url, username, password) as client:
     # Client methods will be implemented in subsequent tasks
@@ -100,6 +107,7 @@ async with RegistryClient(registry_url, username, password) as client:
 ```
 
 ### Error Handling
+
 ```python
 try:
     result = await client.list_repositories()
@@ -117,6 +125,7 @@ except RegistryConnectionError:
 ## Implementation Status
 
 ### ✅ Completed (Task 2.1)
+
 - [ ] Core class structure
 - [ ] Authentication framework
 - [ ] Error handling system
@@ -126,6 +135,7 @@ except RegistryConnectionError:
 - [ ] Type annotations and docstrings
 
 ### 🔄 Next Tasks
+
 - **Task 2.2**: Bearer token authentication implementation
 - **Task 2.3**: Repository listing API methods
 - **Task 2.4**: Tag information API methods
@@ -137,6 +147,7 @@ except RegistryConnectionError:
 ## Testing Strategy
 
 ### Unit Tests (planned for Task 2.8)
+
 - Mock HTTP responses for all API endpoints
 - Authentication flow testing
 - Error handling scenarios
@@ -144,6 +155,7 @@ except RegistryConnectionError:
 - Cache behavior verification
 
 ### Integration Tests
+
 - Real registry connection testing
 - End-to-end workflow validation
 - Performance benchmarking

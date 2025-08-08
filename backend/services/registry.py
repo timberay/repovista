@@ -1508,6 +1508,86 @@ class RegistryClient:
         except Exception as e:
             raise RegistryException(f"Failed to get detailed image info for '{repository_name}:{tag}': {e}")
     
+    async def get_repository_tags(
+        self,
+        repository_name: str,
+        with_metadata: bool = True
+    ) -> List[ImageInfo]:
+        """
+        Get all tags for a repository with optional detailed metadata
+        
+        Args:
+            repository_name: Name of the repository
+            with_metadata: If True, fetch detailed metadata for each tag (slower but more info)
+            
+        Returns:
+            List of ImageInfo objects for all tags in the repository
+            
+        Raises:
+            RegistryException: On API errors or network issues
+        """
+        await self._ensure_authenticated()
+        
+        # Check cache first
+        cache_key = f"repository_tags:{repository_name}:{with_metadata}"
+        cached_result = self._get_cached(cache_key)
+        if cached_result:
+            return cached_result
+        
+        try:
+            # First get the list of tags
+            tags_list = await self.list_tags(repository_name)
+            
+            if not tags_list.tags:
+                # No tags found
+                return []
+            
+            tags_info = []
+            
+            # Fetch detailed info for each tag
+            for tag in tags_list.tags:
+                try:
+                    if with_metadata:
+                        # Get detailed info with config blob (includes creation date, architecture, etc.)
+                        image_info = await self.get_detailed_image_info(repository_name, tag)
+                    else:
+                        # Get basic info from manifest only (faster)
+                        image_info = await self.get_image_info(repository_name, tag)
+                    
+                    # Update pull command with registry URL
+                    image_info.pull_command = self.create_pull_command(repository_name, tag)
+                    
+                    tags_info.append(image_info)
+                    
+                except RegistryNotFoundError:
+                    # Tag might have been deleted between listing and fetching
+                    # Skip this tag and continue
+                    continue
+                except Exception as e:
+                    # Log error but continue with other tags
+                    # In a real implementation, you'd use proper logging
+                    print(f"Warning: Failed to get info for tag '{tag}': {e}")
+                    continue
+            
+            # Sort tags by creation date (newest first) if available
+            # Otherwise sort by tag name
+            if tags_info and tags_info[0].created:
+                tags_info.sort(key=lambda x: x.created or "", reverse=True)
+            else:
+                tags_info.sort(key=lambda x: x.tag)
+            
+            # Cache result for 2 minutes
+            self._set_cache(cache_key, tags_info, 120)
+            
+            return tags_info
+            
+        except RegistryNotFoundError:
+            raise RegistryNotFoundError(f"Repository '{repository_name}' not found")
+        except RegistryException:
+            raise
+        except Exception as e:
+            raise RegistryException(f"Failed to get tags for repository '{repository_name}': {e}")
+    
     def parse_image_reference(self, image_ref: str) -> Dict[str, str]:
         """
         Parse Docker image reference into components
@@ -1570,24 +1650,72 @@ class RegistryClient:
     
     def create_pull_command(self, repository: str, tag: str, registry_url: Optional[str] = None) -> str:
         """
-        Create docker pull command for an image
+        Create docker pull command for an image with proper handling of different registry types
         
         Args:
-            repository: Repository name
-            tag: Tag name
+            repository: Repository name (e.g., 'library/nginx', 'myapp', 'namespace/app')
+            tag: Tag name (e.g., 'latest', '1.0.0')
             registry_url: Optional registry URL (uses instance registry if not provided)
             
         Returns:
-            Docker pull command string
+            Docker pull command string properly formatted for the registry type
         """
-        if registry_url:
-            # Remove protocol from registry URL for pull command
-            registry = registry_url.replace("https://", "").replace("http://", "")
-            return f"docker pull {registry}/{repository}:{tag}"
+        # Determine which registry URL to use
+        target_registry_url = registry_url or self.registry_url
+        
+        # Remove protocol from registry URL for pull command
+        registry_host = target_registry_url.replace("https://", "").replace("http://", "").rstrip("/")
+        
+        # Handle Docker Hub official images (library/ prefix removal)
+        formatted_repository = self._format_repository_for_pull_command(repository, registry_host)
+        
+        # Check if this is Docker Hub (public registry)
+        if self._is_docker_hub_registry(registry_host):
+            # For Docker Hub, we don't include the registry host in the pull command
+            return f"docker pull {formatted_repository}:{tag}"
         else:
-            # Use instance registry URL
-            registry = self.registry_url.replace("https://", "").replace("http://", "")
-            return f"docker pull {registry}/{repository}:{tag}"
+            # For private/custom registries, include the registry host
+            return f"docker pull {registry_host}/{formatted_repository}:{tag}"
+    
+    def _format_repository_for_pull_command(self, repository: str, registry_host: str) -> str:
+        """
+        Format repository name for pull command based on registry type
+        
+        Args:
+            repository: Original repository name
+            registry_host: Registry host name (without protocol)
+            
+        Returns:
+            Formatted repository name for pull command
+        """
+        # For Docker Hub official images, remove 'library/' prefix for cleaner pull commands
+        if self._is_docker_hub_registry(registry_host) and repository.startswith("library/"):
+            # Convert 'library/nginx' to 'nginx' for official Docker Hub images
+            return repository[8:]  # Remove 'library/' prefix
+        
+        # For all other cases (private registries, user repositories), keep the full name
+        return repository
+    
+    def _is_docker_hub_registry(self, registry_host: str) -> bool:
+        """
+        Check if the registry is Docker Hub (public registry)
+        
+        Args:
+            registry_host: Registry host name (without protocol)
+            
+        Returns:
+            True if this is Docker Hub, False otherwise
+        """
+        # Common Docker Hub registry hostnames
+        docker_hub_hosts = [
+            "registry-1.docker.io",
+            "index.docker.io", 
+            "docker.io",
+            "hub.docker.com"
+        ]
+        
+        # Check if the registry host matches any Docker Hub hostname
+        return registry_host.lower() in docker_hub_hosts
     
     def get_image_layers_info(self, manifest: ManifestV2) -> List[Dict[str, Any]]:
         """

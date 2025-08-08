@@ -411,16 +411,107 @@ class TestAsyncOperations:
 class TestUtilityMethods:
     """Test cases for utility methods"""
     
-    def test_create_pull_command(self, registry_client):
-        """Test pull command creation"""
-        # Test with instance registry
+    def test_create_pull_command_private_registry(self, registry_client):
+        """Test pull command creation for private registries"""
+        # Test with instance registry (assuming it's private)
         command = registry_client.create_pull_command("nginx", "latest")
         assert "docker pull" in command
-        assert "nginx:latest" in command
+        # Should include registry host for private registries
+        registry_host = registry_client.registry_url.replace("https://", "").replace("http://", "").rstrip("/")
+        assert f"{registry_host}/nginx:latest" in command
         
-        # Test with custom registry
+        # Test with custom private registry
         command = registry_client.create_pull_command("nginx", "latest", "https://custom.registry.com")
         assert "custom.registry.com/nginx:latest" in command
+        
+        # Test with namespace/repository
+        command = registry_client.create_pull_command("mycompany/myapp", "v1.0")
+        assert f"{registry_host}/mycompany/myapp:v1.0" in command
+    
+    def test_create_pull_command_docker_hub(self):
+        """Test pull command creation for Docker Hub"""
+        # Create client configured for Docker Hub
+        docker_hub_client = RegistryClient("https://registry-1.docker.io")
+        
+        # Test official image (library prefix removal)
+        command = docker_hub_client.create_pull_command("library/nginx", "latest")
+        assert command == "docker pull nginx:latest"
+        
+        # Test user repository (no prefix removal)
+        command = docker_hub_client.create_pull_command("myuser/myapp", "v1.0")
+        assert command == "docker pull myuser/myapp:v1.0"
+        
+        # Test regular repository without library prefix
+        command = docker_hub_client.create_pull_command("redis", "alpine")
+        assert command == "docker pull redis:alpine"
+    
+    def test_is_docker_hub_registry(self, registry_client):
+        """Test Docker Hub registry detection"""
+        docker_hub_hosts = [
+            "registry-1.docker.io",
+            "index.docker.io",
+            "docker.io", 
+            "hub.docker.com"
+        ]
+        
+        for host in docker_hub_hosts:
+            assert registry_client._is_docker_hub_registry(host) is True
+            # Test case insensitive
+            assert registry_client._is_docker_hub_registry(host.upper()) is True
+        
+        # Test non-Docker Hub registries
+        non_docker_hub_hosts = [
+            "registry.example.com",
+            "quay.io",
+            "gcr.io",
+            "localhost:5000"
+        ]
+        
+        for host in non_docker_hub_hosts:
+            assert registry_client._is_docker_hub_registry(host) is False
+    
+    def test_format_repository_for_pull_command(self, registry_client):
+        """Test repository formatting for pull commands"""
+        # Docker Hub official image - should remove library/ prefix
+        formatted = registry_client._format_repository_for_pull_command(
+            "library/nginx", "registry-1.docker.io"
+        )
+        assert formatted == "nginx"
+        
+        # Docker Hub user repository - should keep full name
+        formatted = registry_client._format_repository_for_pull_command(
+            "myuser/myapp", "registry-1.docker.io"
+        )
+        assert formatted == "myuser/myapp"
+        
+        # Private registry - should keep full name regardless
+        formatted = registry_client._format_repository_for_pull_command(
+            "library/nginx", "private.registry.com"
+        )
+        assert formatted == "library/nginx"
+        
+        # Regular repository without library prefix
+        formatted = registry_client._format_repository_for_pull_command(
+            "redis", "registry-1.docker.io"
+        )
+        assert formatted == "redis"
+    
+    def test_create_pull_command_edge_cases(self):
+        """Test pull command creation edge cases"""
+        # Registry URL with trailing slash
+        client = RegistryClient("https://registry.example.com/")
+        command = client.create_pull_command("nginx", "latest")
+        assert "registry.example.com/nginx:latest" in command
+        
+        # HTTP registry (not HTTPS)
+        client = RegistryClient("http://registry.example.com")
+        command = client.create_pull_command("nginx", "latest")
+        assert "registry.example.com/nginx:latest" in command
+        
+        # Registry with port
+        client = RegistryClient("https://localhost:5000")
+        command = client.create_pull_command("nginx", "latest")
+        assert "localhost:5000/nginx:latest" in command
         
     def test_get_image_layers_info(self, registry_client, sample_manifest):
         """Test image layers info extraction"""

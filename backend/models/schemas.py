@@ -88,7 +88,7 @@ class ManifestV2(BaseModel):
 
 
 class ImageInfo(BaseModel):
-    """Processed image information"""
+    """Processed image information for general repository operations"""
     repository: str
     tag: str
     digest: str
@@ -97,6 +97,86 @@ class ImageInfo(BaseModel):
     architecture: Optional[str] = None
     os: Optional[str] = None
     pull_command: str
+
+
+class TagResponse(BaseModel):
+    """
+    Enhanced response model for tag information with formatted size and detailed metadata
+    
+    This model provides comprehensive tag information including both raw and formatted data
+    for optimal API response presentation.
+    """
+    repository: str = Field(
+        ...,
+        description="Repository name (e.g., 'nginx', 'library/ubuntu', 'mycompany/myapp')",
+        example="nginx"
+    )
+    tag: str = Field(
+        ..., 
+        description="Tag name/version identifier",
+        example="latest"
+    )
+    digest: str = Field(
+        ...,
+        description="SHA256 digest of the image manifest",
+        example="sha256:abc123def456789...",
+        min_length=64,
+        max_length=71  # sha256: prefix + 64 hex chars
+    )
+    size_bytes: int = Field(
+        ...,
+        description="Image size in bytes",
+        example=104857600,
+        ge=0
+    )
+    size_formatted: str = Field(
+        ...,
+        description="Human-readable image size",
+        example="100.0 MB"
+    )
+    created: Optional[datetime] = Field(
+        None,
+        description="Image creation timestamp (ISO 8601 format)",
+        example="2023-01-01T12:00:00Z"
+    )
+    created_formatted: Optional[str] = Field(
+        None,
+        description="Human-readable creation date",
+        example="2 days ago"
+    )
+    architecture: Optional[str] = Field(
+        "amd64",
+        description="Target CPU architecture",
+        example="amd64"
+    )
+    os: Optional[str] = Field(
+        "linux", 
+        description="Target operating system",
+        example="linux"
+    )
+    pull_command: str = Field(
+        ...,
+        description="Complete Docker pull command",
+        example="docker pull nginx:latest"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "repository": "nginx",
+                "tag": "latest", 
+                "digest": "sha256:abc123def456789012345678901234567890123456789012345678901234",
+                "size_bytes": 104857600,
+                "size_formatted": "100.0 MB",
+                "created": "2023-01-01T12:00:00Z",
+                "created_formatted": "2 days ago",
+                "architecture": "amd64",
+                "os": "linux",
+                "pull_command": "docker pull nginx:latest"
+            }
+        }
+
+
 
 
 class RepositoryInfo(BaseModel):
@@ -173,6 +253,47 @@ class PaginationResponse(BaseModel):
             next_page=page + 1 if has_next else None,
             prev_page=page - 1 if has_prev else None
         )
+
+
+class TagListResponse(PaginationResponse):
+    """
+    Paginated response model for tag listing with enhanced tag information
+    
+    Provides a paginated list of tags with comprehensive metadata including
+    formatted sizes, creation dates, and pull commands.
+    """
+    tags: List[TagResponse] = Field(
+        ...,
+        description="List of tags with detailed metadata"
+    )
+    
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "tags": [
+                    {
+                        "repository": "nginx",
+                        "tag": "latest",
+                        "digest": "sha256:abc123def456789012345678901234567890123456789012345678901234",
+                        "size_bytes": 104857600,
+                        "size_formatted": "100.0 MB", 
+                        "created": "2023-01-01T12:00:00Z",
+                        "created_formatted": "2 days ago",
+                        "architecture": "amd64",
+                        "os": "linux",
+                        "pull_command": "docker pull nginx:latest"
+                    }
+                ],
+                "page": 1,
+                "page_size": 20,
+                "total_count": 45,
+                "total_pages": 3,
+                "has_next": True,
+                "has_prev": False,
+                "next_page": 2,
+                "prev_page": None
+            }
+        }
 
 
 class SortRequest(BaseModel):
