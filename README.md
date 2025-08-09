@@ -2,6 +2,14 @@
 
 RepoVista is a modern and intuitive web interface for Docker Registry, providing developers with an easy way to browse and select Docker images for deployment.
 
+
+## 🖼️ Screenshots
+
+### Dark Mode
+
+![image](repovista-home.png)
+*RepoVista with Dark Mode - Modern Docker Registry Management Interface*
+
 ## 🚀 Key Features
 
 ### 📦 Repository Management
@@ -22,11 +30,14 @@ RepoVista is a modern and intuitive web interface for Docker Registry, providing
 - Pagination controls (20/50/100 items per page)
 
 ### 📱 User Interface
-- Clean, light theme design
+- **🌙 Dark Mode Support** - Toggle between light and dark themes
+- Clean, modern design with both light and dark themes
 - Grid layout for repository cards
 - Accordion-style tag expansion
 - Loading states and error messages
 - Desktop-optimized (Chrome browser support)
+- Smooth theme transitions with CSS animations
+- Theme persistence using localStorage
 
 ## 🏗️ Architecture
 
@@ -204,7 +215,7 @@ pytest tests/
 }
 ```
 
-## 🎨 UI Components
+## 🎨 UI Components & Features
 
 ### Main Components
 - **Repository Cards** - Grid layout for repository display
@@ -213,12 +224,22 @@ pytest tests/
 - **Pagination Controls** - Page size and navigation
 - **Loading Spinner** - Visual feedback during data fetch
 - **Error Messages** - User-friendly error display
+- **Theme Toggle** - Switch between light and dark modes
+
+### Dark Mode Features
+- **🌙 Floating Theme Toggle** - Fixed button at bottom-right corner
+- **☀️ Header Theme Toggle** - Inline button in the header with text label
+- **💾 Theme Persistence** - Saves preference to localStorage
+- **🖥️ System Preference Detection** - Automatically detects OS dark mode
+- **🎨 Optimized Color Palette** - Carefully selected colors for both themes
+- **✨ Smooth Transitions** - Animated theme switching
 
 ### Styling
-- Clean, modern design with light theme
+- Clean, modern design with both light and dark themes
 - CSS Grid for responsive layout
 - CSS variables for consistent theming
 - Smooth transitions and animations
+- High contrast ratios for accessibility
 
 ## 🔍 Usage
 
@@ -237,6 +258,11 @@ pytest tests/
 2. Use pagination controls to navigate results
 3. Sort results by name or date
 
+### 4. Toggle Dark Mode
+1. Click the moon/sun icon in the header or floating button
+2. Theme preference is automatically saved
+3. Respects system dark mode preference on first visit
+
 ## 🚀 Performance Optimization
 
 ### Frontend Optimization
@@ -244,6 +270,8 @@ pytest tests/
 - Efficient DOM updates
 - Minimized re-renders
 - Optimized event delegation
+- CSS variables for instant theme switching
+- Lazy loading for performance
 
 ### Backend Optimization
 - Async/await for non-blocking operations

@@ -2,6 +2,102 @@
  * RepoVista - Stylesheet
  */
 
+:root {
+    /* Light mode colors */
+    --bg-primary: #F5F5F5;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #FAFAFA;
+    --bg-hover: #F5F5F5;
+    --bg-header: #1976D2;
+    --bg-header-gradient: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    
+    --text-primary: #212121;
+    --text-secondary: #757575;
+    --text-tertiary: #616161;
+    --text-header: #FFFFFF;
+    --text-link: #2196F3;
+    --text-error: #F44336;
+    
+    --border-primary: #E0E0E0;
+    --border-secondary: #BDBDBD;
+    --border-hover: #2196F3;
+    
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.12);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.15);
+    --shadow-hover: 0 4px 8px rgba(33, 150, 243, 0.25);
+    --shadow-notification: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    
+    --btn-primary: #2196F3;
+    --btn-primary-hover: #1976D2;
+    --btn-success: #4CAF50;
+    --btn-danger: #F44336;
+    
+    --code-bg: #F5F5F5;
+    --code-text: #424242;
+    
+    --badge-bg: #FF5722;
+    --badge-text: #FFFFFF;
+    
+    --match-bg: #fff3cd;
+    --match-border: #ffeaa7;
+    --match-text: #856404;
+    --match-highlight: #fff9e6;
+    --match-highlight-hover: #fff3cd;
+    
+    --scrollbar-track: #F5F5F5;
+    --scrollbar-thumb: #BDBDBD;
+    --scrollbar-thumb-hover: #9E9E9E;
+}
+
+[data-theme="dark"] {
+    /* Dark mode colors */
+    --bg-primary: #121212;
+    --bg-secondary: #1E1E1E;
+    --bg-tertiary: #252525;
+    --bg-hover: #2A2A2A;
+    --bg-header: #1C398E;
+    --bg-header-gradient: radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%);
+    
+    --text-primary: #E0E0E0;
+    --text-secondary: #9E9E9E;
+    --text-tertiary: #BDBDBD;
+    --text-header: #FFFFFF;
+    --text-link: #64B5F6;
+    --text-error: #EF5350;
+    
+    --border-primary: #333333;
+    --border-secondary: #424242;
+    --border-hover: #64B5F6;
+    
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.3), 0 8px 16px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 4px 8px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 4px 8px rgba(100, 181, 246, 0.3);
+    --shadow-notification: 0 3px 6px rgba(0, 0, 0, 0.4), 0 3px 6px rgba(0, 0, 0, 0.4);
+    
+    --btn-primary: #42A5F5;
+    --btn-primary-hover: #2196F3;
+    --btn-success: #66BB6A;
+    --btn-danger: #EF5350;
+    
+    --code-bg: #2A2A2A;
+    --code-text: #E0E0E0;
+    
+    --badge-bg: #FF6E40;
+    --badge-text: #FFFFFF;
+    
+    --match-bg: #4A3C28;
+    --match-border: #5A4A3A;
+    --match-text: #FFD54F;
+    --match-highlight: #3A3028;
+    --match-highlight-hover: #4A3C28;
+    
+    --scrollbar-track: #252525;
+    --scrollbar-thumb: #424242;
+    --scrollbar-thumb-hover: #555555;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -10,20 +106,23 @@
 
 body {
     font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-    background: #F5F5F5;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     min-height: 100vh;
     padding: 20px;
+    transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .container {
     max-width: 1400px;
     margin: 0 auto;
-    background: #FFFFFF;
+    background: var(--bg-secondary);
     backdrop-filter: blur(10px);
     border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1), 0 8px 16px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-md);
     overflow: hidden;
     animation: slideUp 0.5s ease-out;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 @keyframes slideUp {
@@ -38,12 +137,13 @@ body {
 }
 
 .header {
-    background: #1976D2;
-    color: white;
+    background: var(--bg-header);
+    color: var(--text-header);
     padding: 30px;
     text-align: center;
     position: relative;
     overflow: hidden;
+    transition: background-color 0.3s ease;
 }
 
 .header::before {
@@ -53,7 +153,7 @@ body {
     right: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+    background: var(--bg-header-gradient);
     animation: pulse 3s ease-in-out infinite;
 }
 
@@ -80,10 +180,11 @@ body {
     display: flex;
     gap: 15px;
     padding: 25px;
-    background: #FAFAFA;
-    border-bottom: 1px solid #E0E0E0;
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-primary);
     flex-wrap: wrap;
     align-items: center;
+    transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .search-group {
@@ -91,17 +192,17 @@ body {
     min-width: 300px;
     display: flex;
     align-items: center;
-    background: white;
-    border: 1px solid #BDBDBD;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
     border-radius: 4px;
     overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-sm);
 }
 
 .search-group:focus-within {
-    border-color: #2196F3;
-    box-shadow: 0 2px 4px rgba(33, 150, 243, 0.25);
+    border-color: var(--border-hover);
+    box-shadow: var(--shadow-hover);
 }
 
 .search-group input {
@@ -111,25 +212,26 @@ body {
     font-size: 16px;
     background: transparent;
     outline: none;
+    color: var(--text-primary);
 }
 
 .refresh-button {
     padding: 12px 16px;
     background: transparent;
     border: none;
-    border-right: 1px solid #E0E0E0;
+    border-right: 1px solid var(--border-primary);
     cursor: pointer;
     font-size: 16px;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #757575;
+    color: var(--text-secondary);
 }
 
 .refresh-button:hover {
-    background: #F5F5F5;
-    color: #2196F3;
+    background: var(--bg-hover);
+    color: var(--text-link);
 }
 
 .refresh-button:hover i {
@@ -140,25 +242,25 @@ body {
     padding: 12px 24px;
     background: transparent;
     border: none;
-    border-left: 1px solid #E0E0E0;
+    border-left: 1px solid var(--border-primary);
     cursor: pointer;
     font-size: 15px;
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #757575;
+    color: var(--text-secondary);
 }
 
 .search-button:hover {
-    background: #2196F3;
-    color: white;
+    background: var(--btn-primary);
+    color: var(--text-header);
 }
 
 .control-btn {
     padding: 12px 24px;
-    background: white;
-    border: 1px solid #BDBDBD;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
     border-radius: 4px;
     cursor: pointer;
     font-size: 15px;
@@ -166,15 +268,16 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-sm);
+    color: var(--text-primary);
 }
 
 .control-btn:hover {
-    background: #2196F3;
-    color: white;
-    border-color: #2196F3;
+    background: var(--btn-primary);
+    color: var(--text-header);
+    border-color: var(--btn-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(33, 150, 243, 0.25);
+    box-shadow: var(--shadow-hover);
 }
 
 .control-btn:disabled {
@@ -192,14 +295,14 @@ body {
 .loading {
     text-align: center;
     padding: 40px;
-    color: #757575;
+    color: var(--text-secondary);
 }
 
 .spinner {
     width: 40px;
     height: 40px;
-    border: 4px solid #E0E0E0;
-    border-top: 4px solid #2196F3;
+    border: 4px solid var(--border-primary);
+    border-top: 4px solid var(--btn-primary);
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin: 0 auto 20px;
@@ -213,7 +316,7 @@ body {
 .error {
     text-align: center;
     padding: 40px;
-    color: #F44336;
+    color: var(--text-error);
 }
 
 .error h3 {
@@ -223,31 +326,31 @@ body {
 .error button {
     margin-top: 15px;
     padding: 10px 20px;
-    background: #2196F3;
-    color: white;
+    background: var(--btn-primary);
+    color: var(--text-header);
     border: none;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    box-shadow: var(--shadow-sm);
 }
 
 .error button:hover {
-    background: #1976D2;
+    background: var(--btn-primary-hover);
     transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+    box-shadow: var(--shadow-lg);
 }
 
 .repository-card {
-    background: white;
-    border: 1px solid #E0E0E0;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     margin-bottom: 16px;
     overflow: hidden;
     transition: all 0.3s ease;
     opacity: 0;
     animation: cardFadeInUp 0.5s ease-out forwards;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+    box-shadow: var(--shadow-sm);
 }
 
 
@@ -263,13 +366,13 @@ body {
 }
 
 .repository-card:hover {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-lg);
     transform: translateY(-2px);
 }
 
 .repo-header {
     padding: 20px;
-    background: #FAFAFA;
+    background: var(--bg-tertiary);
     cursor: pointer;
     display: flex;
     justify-content: space-between;
@@ -278,7 +381,7 @@ body {
 }
 
 .repo-header:hover {
-    background: #F5F5F5;
+    background: var(--bg-hover);
 }
 
 .repo-info {
@@ -288,7 +391,7 @@ body {
 .repo-name {
     font-size: 1.3em;
     font-weight: 500;
-    color: #212121;
+    color: var(--text-primary);
     margin-bottom: 8px;
     display: flex;
     align-items: center;
@@ -298,7 +401,7 @@ body {
 .repo-meta {
     display: flex;
     gap: 30px;
-    color: #757575;
+    color: var(--text-secondary);
     font-size: 0.9em;
 }
 
@@ -310,32 +413,32 @@ body {
 
 .match-badge {
     display: inline-block;
-    background: #fff3cd;
-    color: #856404;
+    background: var(--match-bg);
+    color: var(--match-text);
     padding: 4px 12px;
     border-radius: 12px;
     font-size: 12px;
     font-weight: 500;
-    border: 1px solid #ffeaa7;
+    border: 1px solid var(--match-border);
 }
 
 /* Highlight matched tags in the table */
 .matched-tag-row {
-    background-color: #fff9e6 !important;
+    background-color: var(--match-highlight) !important;
 }
 
 .matched-tag-row:hover {
-    background-color: #fff3cd !important;
+    background-color: var(--match-highlight-hover) !important;
 }
 
 .matched-tag-name {
     font-weight: 600;
-    color: #856404;
+    color: var(--match-text);
 }
 
 .expand-icon {
     font-size: 1.2em;
-    color: #2196F3;
+    color: var(--text-link);
     transition: transform 0.3s ease;
 }
 
@@ -345,7 +448,7 @@ body {
 
 .tags-table {
     padding: 20px;
-    background: #FAFAFA;
+    background: var(--bg-tertiary);
     display: none;
 }
 
@@ -371,32 +474,33 @@ table {
 }
 
 th {
-    background: #F5F5F5;
+    background: var(--bg-hover);
     padding: 12px;
     text-align: left;
     font-weight: 500;
-    color: #616161;
-    border-bottom: 1px solid #E0E0E0;
+    color: var(--text-tertiary);
+    border-bottom: 1px solid var(--border-primary);
 }
 
 td {
     padding: 12px;
-    border-bottom: 1px solid #F5F5F5;
+    border-bottom: 1px solid var(--border-primary);
+    color: var(--text-primary);
 }
 
 tr:hover {
-    background: #FAFAFA;
+    background: var(--bg-hover);
 }
 
 .tag-name {
     font-weight: 500;
-    color: #2196F3;
+    color: var(--text-link);
 }
 
 .image-id {
     font-family: 'Roboto Mono', 'Courier New', monospace;
     font-size: 0.9em;
-    color: #757575;
+    color: var(--text-secondary);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -411,8 +515,8 @@ tr:hover {
 }
 
 .command-text {
-    color: #424242;
-    background: #F5F5F5;
+    color: var(--code-text);
+    background: var(--code-bg);
     padding: 4px 8px;
     border-radius: 4px;
     white-space: nowrap;
@@ -423,12 +527,12 @@ tr:hover {
 
 .copy-btn-inline {
     background: transparent;
-    border: 1px solid #E0E0E0;
+    border: 1px solid var(--border-primary);
     border-radius: 4px;
     padding: 4px 8px;
     cursor: pointer;
     transition: all 0.2s ease;
-    color: #757575;
+    color: var(--text-secondary);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -437,13 +541,13 @@ tr:hover {
 }
 
 .copy-btn-inline:hover {
-    background: #F5F5F5;
-    border-color: #BDBDBD;
-    color: #424242;
+    background: var(--bg-hover);
+    border-color: var(--border-secondary);
+    color: var(--text-primary);
 }
 
 .copy-btn-inline:active {
-    background: #EEEEEE;
+    background: var(--bg-hover);
     transform: scale(0.95);
 }
 
@@ -460,23 +564,24 @@ tr:hover {
 
 .page-btn {
     padding: 8px 16px;
-    border: 1px solid #E0E0E0;
-    background: white;
+    border: 1px solid var(--border-primary);
+    background: var(--bg-secondary);
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
+    color: var(--text-primary);
 }
 
 .page-btn:hover {
-    background: #2196F3;
-    color: white;
-    border-color: #2196F3;
+    background: var(--btn-primary);
+    color: var(--text-header);
+    border-color: var(--btn-primary);
 }
 
 .page-btn.active {
-    background: #1976D2;
-    color: white;
-    border-color: #1976D2;
+    background: var(--btn-primary-hover);
+    color: var(--text-header);
+    border-color: var(--btn-primary-hover);
 }
 
 .page-btn:disabled {
@@ -487,8 +592,8 @@ tr:hover {
 .badge {
     display: inline-block;
     padding: 4px 10px;
-    background: #FF5722;
-    color: white;
+    background: var(--badge-bg);
+    color: var(--badge-text);
     border-radius: 12px;
     font-size: 0.65em;
     font-weight: 500;
@@ -497,12 +602,12 @@ tr:hover {
 .empty-state {
     text-align: center;
     padding: 60px 20px;
-    color: #757575;
+    color: var(--text-secondary);
 }
 
 .empty-state h3 {
     margin-bottom: 10px;
-    color: #424242;
+    color: var(--text-primary);
 }
 
 .empty-state p {
@@ -515,17 +620,79 @@ tr:hover {
 }
 
 .repositories::-webkit-scrollbar-track {
-    background: #F5F5F5;
+    background: var(--scrollbar-track);
     border-radius: 4px;
 }
 
 .repositories::-webkit-scrollbar-thumb {
-    background: #BDBDBD;
+    background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 
 .repositories::-webkit-scrollbar-thumb:hover {
-    background: #9E9E9E;
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--btn-primary);
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: var(--shadow-md);
+    transition: all 0.3s ease;
+    z-index: 999;
+    color: var(--text-header);
+    font-size: 24px;
+}
+
+.theme-toggle:hover {
+    background: var(--btn-primary-hover);
+    transform: scale(1.1);
+    box-shadow: var(--shadow-lg);
+}
+
+.theme-toggle:active {
+    transform: scale(0.95);
+}
+
+.theme-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.theme-toggle:hover i {
+    transform: rotate(20deg);
+}
+
+/* Alternative inline theme toggle for header */
+.theme-toggle-inline {
+    background: transparent;
+    border: 2px solid var(--text-header);
+    border-radius: 20px;
+    padding: 8px 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--text-header);
+    font-size: 14px;
+    transition: all 0.3s ease;
+    position: absolute;
+    right: 30px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.theme-toggle-inline:hover {
+    background: rgba(255, 255, 255, 0.1);
 }
 
 /* Notification styles */
@@ -535,19 +702,19 @@ tr:hover {
     right: 20px;
     padding: 15px 20px;
     border-radius: 4px;
-    color: white;
+    color: var(--text-header);
     font-weight: 500;
     z-index: 1000;
     animation: slideInRight 0.3s ease-out;
-    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.16), 0 3px 6px rgba(0, 0, 0, 0.23);
+    box-shadow: var(--shadow-notification);
 }
 
 .notification.success {
-    background: #4CAF50;
+    background: var(--btn-success);
 }
 
 .notification.error {
-    background: #F44336;
+    background: var(--btn-danger);
 }
 
 @keyframes slideInRight {

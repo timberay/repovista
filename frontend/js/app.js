@@ -453,9 +453,112 @@ function copyImageId(imageId) {
     }
 }
 
+// Theme management
+const themeManager = {
+    // Get current theme from localStorage or system preference
+    getCurrentTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            return savedTheme;
+        }
+        
+        // Check system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+        
+        return 'light';
+    },
+    
+    // Apply theme to document
+    applyTheme(theme) {
+        if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        } else {
+            document.documentElement.removeAttribute('data-theme');
+        }
+        
+        // Update theme toggle buttons
+        this.updateThemeButtons(theme);
+        
+        // Save to localStorage
+        localStorage.setItem('theme', theme);
+    },
+    
+    // Update theme toggle button icons and text
+    updateThemeButtons(theme) {
+        const themeIcon = document.getElementById('theme-icon');
+        const themeIconInline = document.getElementById('theme-icon-inline');
+        const themeText = document.getElementById('theme-text');
+        
+        if (theme === 'dark') {
+            if (themeIcon) {
+                themeIcon.className = 'fas fa-sun';
+            }
+            if (themeIconInline) {
+                themeIconInline.className = 'fas fa-sun';
+            }
+            if (themeText) {
+                themeText.textContent = 'Light';
+            }
+        } else {
+            if (themeIcon) {
+                themeIcon.className = 'fas fa-moon';
+            }
+            if (themeIconInline) {
+                themeIconInline.className = 'fas fa-moon';
+            }
+            if (themeText) {
+                themeText.textContent = 'Dark';
+            }
+        }
+    },
+    
+    // Toggle theme between light and dark
+    toggleTheme() {
+        const currentTheme = this.getCurrentTheme();
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        this.applyTheme(newTheme);
+        
+        // Show notification
+        utils.showNotification(`Switched to ${newTheme} mode`);
+    },
+    
+    // Initialize theme on page load
+    init() {
+        const theme = this.getCurrentTheme();
+        this.applyTheme(theme);
+        
+        // Add theme toggle event listeners
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeToggleInline = document.getElementById('theme-toggle-inline');
+        
+        if (themeToggle) {
+            themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
+        
+        if (themeToggleInline) {
+            themeToggleInline.addEventListener('click', () => this.toggleTheme());
+        }
+        
+        // Listen for system theme changes
+        if (window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+                // Only apply if user hasn't manually set a preference
+                if (!localStorage.getItem('theme')) {
+                    this.applyTheme(e.matches ? 'dark' : 'light');
+                }
+            });
+        }
+    }
+};
+
 // Event listeners
 document.addEventListener('DOMContentLoaded', async () => {
     try {
+        // Initialize theme
+        themeManager.init();
+        
         // First fetch registry configuration
         await api.fetchRegistryConfig();
         
