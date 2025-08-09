@@ -133,19 +133,25 @@ async def get_registry_client() -> RegistryClient:
     
     # Check if registry is available
     try:
-        if await client.ping():
+        is_available = await client.ping()
+        logger.info(f"Registry ping result: {is_available} for {settings.registry_url}")
+        if is_available:
+            logger.info(f"Using real registry at {settings.registry_url}")
             return client
+        else:
+            logger.warning(f"Registry at {settings.registry_url} is not available (ping returned False)")
     except Exception as e:
         logger.warning(f"Registry at {settings.registry_url} is not available: {e}")
-        
-        # Fallback to mock data for development
-        if "localhost" in settings.registry_url or "127.0.0.1" in settings.registry_url:
-            logger.info("Falling back to mock registry data for development")
-            await client.close()
-            return MockRegistryClient()
-        
-        # For production registries, raise the error
-        raise
+    
+    # Fallback to mock data for development
+    if "localhost" in settings.registry_url or "127.0.0.1" in settings.registry_url or "172.17" in settings.registry_url:
+        logger.info("Falling back to mock registry data for development")
+        await client.close()
+        return MockRegistryClient()
+    
+    # For production registries, raise the error
+    logger.error(f"Registry at {settings.registry_url} is not accessible")
+    raise RegistryConnectionError(f"Cannot connect to registry at {settings.registry_url}")
     
     return client
 

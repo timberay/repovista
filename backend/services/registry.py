@@ -1122,6 +1122,26 @@ class RegistryClient:
         
         return None
     
+    async def ping(self) -> bool:
+        """
+        Check if the registry is accessible
+        
+        Returns:
+            True if registry is accessible, False otherwise
+        """
+        try:
+            # The /v2/ endpoint is the standard Docker Registry API version check endpoint
+            url = urljoin(self.registry_url, "/v2/")
+            response = await self._make_request("GET", url)
+            
+            # Registry should return 200 OK or 401 Unauthorized (if auth is required)
+            # Both indicate the registry is accessible
+            return response.status_code in [200, 401]
+            
+        except Exception:
+            # Any exception means the registry is not accessible
+            return False
+    
     async def list_repositories(
         self,
         limit: Optional[int] = None,
