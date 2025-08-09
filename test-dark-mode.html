@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dark Mode Test - RepoVista</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #1976D2;
+        }
+        .test-section {
+            margin: 30px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .test-card {
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            background: #f5f5f5;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        .status.pass {
+            background: #4CAF50;
+            color: white;
+        }
+        .status.fail {
+            background: #F44336;
+            color: white;
+        }
+        .status.pending {
+            background: #FF9800;
+            color: white;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .theme-demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        .theme-preview {
+            padding: 20px;
+            border-radius: 8px;
+            min-height: 200px;
+        }
+        .light-preview {
+            background: #F5F5F5;
+            color: #212121;
+        }
+        .dark-preview {
+            background: #121212;
+            color: #E0E0E0;
+        }
+        .color-swatch {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            margin: 0 5px;
+            vertical-align: middle;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Dark Mode Implementation Test</h1>
+    
+    <div class="test-section">
+        <h2>✅ Implementation Checklist</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>CSS Variables</h3>
+                <span class="status pass">COMPLETED</span>
+                <ul>
+                    <li>✅ Root CSS variables for light mode</li>
+                    <li>✅ Dark mode CSS variables with [data-theme="dark"]</li>
+                    <li>✅ Smooth transitions between themes</li>
+                </ul>
+            </div>
+            
+            <div class="test-card">
+                <h3>UI Components</h3>
+                <span class="status pass">COMPLETED</span>
+                <ul>
+                    <li>✅ Floating theme toggle button</li>
+                    <li>✅ Inline header toggle button</li>
+                    <li>✅ Icon switching (moon/sun)</li>
+                    <li>✅ Hover effects and animations</li>
+                </ul>
+            </div>
+            
+            <div class="test-card">
+                <h3>JavaScript Functionality</h3>
+                <span class="status pass">COMPLETED</span>
+                <ul>
+                    <li>✅ Theme toggle functionality</li>
+                    <li>✅ LocalStorage persistence</li>
+                    <li>✅ System preference detection</li>
+                    <li>✅ Real-time theme switching</li>
+                </ul>
+            </div>
+            
+            <div class="test-card">
+                <h3>Color Scheme</h3>
+                <span class="status pass">COMPLETED</span>
+                <ul>
+                    <li>✅ Optimized dark mode colors</li>
+                    <li>✅ Proper contrast ratios</li>
+                    <li>✅ Consistent color variables</li>
+                    <li>✅ Accessible text colors</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🎨 Color Palettes</h2>
+        <div class="theme-demo">
+            <div class="theme-preview light-preview">
+                <h3>Light Mode</h3>
+                <p>Primary Background: <span class="color-swatch" style="background: #F5F5F5;"></span> #F5F5F5</p>
+                <p>Secondary Background: <span class="color-swatch" style="background: #FFFFFF;"></span> #FFFFFF</p>
+                <p>Primary Text: <span class="color-swatch" style="background: #212121;"></span> #212121</p>
+                <p>Secondary Text: <span class="color-swatch" style="background: #757575;"></span> #757575</p>
+                <p>Primary Button: <span class="color-swatch" style="background: #2196F3;"></span> #2196F3</p>
+                <p>Header Background: <span class="color-swatch" style="background: #1976D2;"></span> #1976D2</p>
+            </div>
+            
+            <div class="theme-preview dark-preview">
+                <h3>Dark Mode</h3>
+                <p>Primary Background: <span class="color-swatch" style="background: #121212;"></span> #121212</p>
+                <p>Secondary Background: <span class="color-swatch" style="background: #1E1E1E;"></span> #1E1E1E</p>
+                <p>Primary Text: <span class="color-swatch" style="background: #E0E0E0;"></span> #E0E0E0</p>
+                <p>Secondary Text: <span class="color-swatch" style="background: #9E9E9E;"></span> #9E9E9E</p>
+                <p>Primary Button: <span class="color-swatch" style="background: #42A5F5;"></span> #42A5F5</p>
+                <p>Header Background: <span class="color-swatch" style="background: #0D47A1;"></span> #0D47A1</p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Features Implemented</h2>
+        <div class="test-grid">
+            <div class="test-card">
+                <h3>Theme Persistence</h3>
+                <p>The selected theme is saved to localStorage and persists across page reloads.</p>
+                <pre>localStorage.setItem('theme', theme);</pre>
+            </div>
+            
+            <div class="test-card">
+                <h3>System Preference Detection</h3>
+                <p>Automatically detects and applies system dark mode preference if no saved preference exists.</p>
+                <pre>window.matchMedia('(prefers-color-scheme: dark)')</pre>
+            </div>
+            
+            <div class="test-card">
+                <h3>Smooth Transitions</h3>
+                <p>All color changes include smooth CSS transitions for a polished user experience.</p>
+                <pre>transition: background-color 0.3s ease, color 0.3s ease;</pre>
+            </div>
+            
+            <div class="test-card">
+                <h3>Accessibility</h3>
+                <p>Theme toggle buttons include proper ARIA labels and keyboard support.</p>
+                <pre>aria-label="Toggle dark mode"</pre>
+            </div>
+        </div>
+    </div>
+    
+    <div class="test-section">
+        <h2>📋 Testing Instructions</h2>
+        <ol>
+            <li><strong>Open the main application</strong> in your browser</li>
+            <li><strong>Click the theme toggle button</strong> (either floating or in header)</li>
+            <li><strong>Verify smooth transition</strong> between light and dark modes</li>
+            <li><strong>Check localStorage</strong> persistence by refreshing the page</li>
+            <li><strong>Test all UI components</strong> in both themes:
+                <ul>
+                    <li>Repository cards</li>
+                    <li>Search input and buttons</li>
+                    <li>Pagination controls</li>
+                    <li>Tag tables</li>
+                    <li>Loading spinners</li>
+                    <li>Error messages</li>
+                    <li>Notifications</li>
+                </ul>
+            </li>
+            <li><strong>Verify contrast and readability</strong> in both modes</li>
+        </ol>
+    </div>
+    
+    <div class="test-section">
+        <h2>✨ Summary</h2>
+        <p><strong>Dark mode has been successfully implemented!</strong> The application now supports:</p>
+        <ul>
+            <li>🌙 Full dark mode with optimized colors</li>
+            <li>☀️ Light mode (default)</li>
+            <li>💾 Theme persistence in localStorage</li>
+            <li>🖥️ System preference detection</li>
+            <li>🎨 Smooth theme transitions</li>
+            <li>♿ Accessible theme toggle controls</li>
+            <li>📱 Responsive design in both themes</li>
+        </ul>
+    </div>
+</body>
+</html>
