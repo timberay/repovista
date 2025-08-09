@@ -90,14 +90,9 @@ class RepositoryService:
             # Convert to repository data objects
             repo_data = await self._convert_to_repository_data(repositories, include_metadata)
             
-            # Apply search filter
+            # Apply search filter (now includes tag search)
             if search_req.search:
-                search_func = create_repository_search_function(
-                    search_term=search_req.search,
-                    search_strategy="contains",
-                    case_sensitive=False
-                )
-                repo_data = [repo for repo in repo_data if search_func(repo["name"])]
+                repo_data = await self._search_repositories_and_tags(repo_data, search_req.search)
             
             # Apply sorting
             if search_req.search and sort_req.sort_by == "relevance":
@@ -128,6 +123,86 @@ class RepositoryService:
         except Exception as e:
             logger.error(f"Error in search_and_list_repositories: {e}", exc_info=True)
             raise
+    
+    async def _search_repositories_and_tags(
+        self,
+        repo_data: List[Dict[str, Any]],
+        search_term: str
+    ) -> List[Dict[str, Any]]:
+        """
+        Search repositories by both repository name and tag names
+        
+        Args:
+            repo_data: List of repository data
+            search_term: Search term to match
+            
+        Returns:
+            Filtered list of repositories that match either by name or tag
+        """
+        if not search_term:
+            return repo_data
+            
+        search_term_lower = search_term.lower()
+        matched_repos = []
+        
+        # Create repository name search function
+        search_func = create_repository_search_function(
+            search_term=search_term,
+            search_strategy="contains",
+            case_sensitive=False
+        )
+        
+        # Process each repository
+        for repo in repo_data:
+            # Check if repository name matches
+            if search_func(repo["name"]):
+                repo["match_type"] = "repository_name"
+                repo["matched_tags"] = []
+                matched_repos.append(repo)
+                continue
+            
+            # Check if any tag names match
+            try:
+                # Fetch tags for this repository
+                tags_response = await self.registry_client.list_tags(repo["name"])
+                
+                # Handle different response formats
+                if hasattr(tags_response, 'tags'):
+                    tags = tags_response.tags
+                elif isinstance(tags_response, dict) and 'tags' in tags_response:
+                    tags = tags_response['tags']
+                elif isinstance(tags_response, list):
+                    tags = tags_response
+                else:
+                    tags = []
+                
+                # Search through tag names
+                matched_tags = []
+                for tag in tags:
+                    # Handle different tag object formats
+                    if hasattr(tag, 'tag'):
+                        tag_name = tag.tag
+                    elif isinstance(tag, dict) and 'tag' in tag:
+                        tag_name = tag['tag']
+                    elif isinstance(tag, str):
+                        tag_name = tag
+                    else:
+                        continue
+                    
+                    if search_term_lower in tag_name.lower():
+                        matched_tags.append(tag_name)
+                
+                # If any tags match, include this repository
+                if matched_tags:
+                    repo["match_type"] = "tag_name"
+                    repo["matched_tags"] = matched_tags[:5]  # Limit to first 5 matching tags
+                    matched_repos.append(repo)
+                    
+            except Exception as e:
+                logger.warning(f"Error fetching tags for {repo['name']} during search: {e}")
+                # Continue without tag search for this repository
+                
+        return matched_repos
     
     async def _convert_to_repository_data(
         self,

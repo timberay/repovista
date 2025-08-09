@@ -182,7 +182,15 @@ const ui = {
             return;
         }
 
-        repositoriesDiv.innerHTML = repos.map(repo => this.renderRepositoryCard(repo)).join('');
+        // Render all cards with staggered animation
+        repositoriesDiv.innerHTML = repos.map((repo, index) => {
+            const cardHtml = this.renderRepositoryCard(repo);
+            // Add animation delay based on index
+            return cardHtml.replace(
+                'class="repository-card"',
+                `class="repository-card" style="animation-delay: ${index * 0.1}s"`
+            );
+        }).join('');
         
         // Update pagination
         this.renderPagination(pagination);
@@ -195,6 +203,18 @@ const ui = {
         const lastUpdated = utils.formatDate(repo.last_updated);
         const tagCount = repo.tag_count || 0;
         
+        // Create match indicator if this is a search result
+        let matchIndicator = '';
+        if (repo.match_type === 'tag_name' && repo.matched_tags && repo.matched_tags.length > 0) {
+            const matchedTagsText = repo.matched_tags.slice(0, 3).join(', ');
+            const moreCount = repo.matched_tags.length > 3 ? ` +${repo.matched_tags.length - 3} more` : '';
+            matchIndicator = `
+                <div class="match-indicator">
+                    <span class="match-badge">🏷️ Tag match: ${utils.escapeHtml(matchedTagsText)}${moreCount}</span>
+                </div>
+            `;
+        }
+        
         return `
             <div class="repository-card" data-repo="${utils.escapeHtml(repo.name)}">
                 <div class="repo-header" onclick="toggleExpand(this)">
@@ -204,6 +224,7 @@ const ui = {
                             <span>${utils.escapeHtml(repo.name)}</span>
                             <span class="badge">${tagCount} tags</span>
                         </div>
+                        ${matchIndicator}
                         <div class="repo-meta">
                             <span>💾 Total size: ${sizeFormatted}</span>
                             <span>📅 Last updated: ${lastUpdated}</span>
@@ -221,7 +242,7 @@ const ui = {
         `;
     },
 
-    renderTagsTable(repoName, tags) {
+    renderTagsTable(repoName, tags, matchedTags = []) {
         if (!tags || tags.length === 0) {
             return `
                 <div class="empty-state">
@@ -250,9 +271,16 @@ const ui = {
                         const created = tag.created_formatted || utils.formatDate(tag.created) || 'N/A';
                         const pullCommand = `docker pull ${registryUrl}/${repoName}:${tagName}`;
                         
+                        // Check if this tag was matched in the search
+                        const isMatched = matchedTags.includes(tagName);
+                        const rowClass = isMatched ? 'matched-tag-row' : '';
+                        const tagClass = isMatched ? 'matched-tag-name' : 'tag-name';
+                        
                         return `
-                            <tr>
-                                <td class="tag-name">${utils.escapeHtml(tagName)}</td>
+                            <tr class="${rowClass}">
+                                <td class="${tagClass}">
+                                    ${isMatched ? '🏷️ ' : ''}${utils.escapeHtml(tagName)}
+                                </td>
                                 <td class="image-id">
                                     <span>${utils.escapeHtml(digest)}</span>
                                     <button class="copy-btn-inline" onclick="copyImageId('${utils.escapeHtml(tag.digest || '')}')">
@@ -338,8 +366,13 @@ async function loadTags(repoName, cardElement) {
     try {
         const response = await api.fetchTags(repoName);
         const tagsTable = cardElement.querySelector('.tags-table');
+        
+        // Get the repository data to check for matched tags
+        const repoData = repositories.find(r => r.name === repoName);
+        const matchedTags = repoData?.matched_tags || [];
+        
         if (tagsTable) {
-            tagsTable.innerHTML = ui.renderTagsTable(repoName, response.tags || []);
+            tagsTable.innerHTML = ui.renderTagsTable(repoName, response.tags || [], matchedTags);
         }
         
     } catch (error) {

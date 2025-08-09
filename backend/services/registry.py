@@ -8,6 +8,7 @@ including authentication, repository listing, and tag management.
 import asyncio
 import base64
 import json
+import logging
 import time
 from typing import Dict, List, Optional, Tuple, Any
 from urllib.parse import urljoin, urlparse, parse_qs
@@ -20,6 +21,9 @@ from ..models.schemas import (
     ManifestV2, ImageInfo, RepositoryInfo, PaginationInfo,
     RegistryErrorResponse, RegistryError
 )
+
+# Setup logger
+logger = logging.getLogger(__name__)
 
 
 class RegistryException(Exception):
@@ -1263,12 +1267,65 @@ class RegistryClient:
             tags_data = tags_response.json()
             tags_list = TagsList(**tags_data)
             
-            # Basic repository info
+            # Initialize repository info with basic data
+            total_size = 0
+            latest_date = None
+            
+            # If there are tags, fetch first few to get size and date info
+            if tags_list.tags:
+                # Limit to checking first 10 tags for performance
+                sample_tags = tags_list.tags[:min(10, len(tags_list.tags))]
+                
+                for tag_name in sample_tags:
+                    try:
+                        # Get manifest to extract size and date
+                        manifest, digest = await self.get_manifest(repository_name, tag_name)
+                        
+                        # Calculate layer sizes
+                        if manifest.layers:
+                            tag_size = sum(layer.size for layer in manifest.layers if layer.size)
+                            total_size += tag_size
+                        
+                        # Get config to extract creation date
+                        if manifest.config and manifest.config.digest:
+                            try:
+                                config_response = await self._make_request(
+                                    "GET",
+                                    f"{self.registry_url}/v2/{repository_name}/blobs/{manifest.config.digest}"
+                                )
+                                config_data = config_response.json()
+                                
+                                # Extract creation date from config
+                                if "created" in config_data:
+                                    created_str = config_data["created"]
+                                    # Parse ISO format date
+                                    from datetime import datetime
+                                    created_date = datetime.fromisoformat(created_str.replace("Z", "+00:00"))
+                                    
+                                    # Track latest date
+                                    if latest_date is None or created_date > latest_date:
+                                        latest_date = created_date
+                                        
+                            except Exception as e:
+                                # Continue even if we can't get config
+                                logger.debug(f"Could not fetch config for {repository_name}:{tag_name}: {e}")
+                                
+                    except Exception as e:
+                        # Continue with other tags if one fails
+                        logger.debug(f"Could not process tag {repository_name}:{tag_name}: {e}")
+                        continue
+                
+                # Estimate total size based on sample (if we only checked a subset)
+                if len(sample_tags) < len(tags_list.tags):
+                    avg_size_per_tag = total_size / len(sample_tags) if sample_tags else 0
+                    total_size = int(avg_size_per_tag * len(tags_list.tags))
+            
+            # Create repository info with calculated metadata
             repo_info = RepositoryInfo(
                 name=repository_name,
                 tag_count=len(tags_list.tags),
-                last_updated=None,  # Will be populated by tag analysis
-                size_bytes=None     # Will be calculated from manifests
+                last_updated=latest_date,
+                size_bytes=total_size if total_size > 0 else None
             )
             
             # Cache result

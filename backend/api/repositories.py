@@ -32,6 +32,8 @@ class RepositoryResponse(BaseModel):
     tag_count: int = Field(..., description="Number of tags in repository", example=15)
     last_updated: Optional[datetime] = Field(None, description="Last update timestamp", example="2023-12-01T12:00:00Z")
     size_bytes: Optional[int] = Field(None, description="Total repository size in bytes", example=142857600)
+    match_type: Optional[str] = Field(None, description="How the repository matched the search (repository_name or tag_name)", example="repository_name")
+    matched_tags: Optional[List[str]] = Field(None, description="List of tag names that matched the search", example=["latest", "alpine"])
     
     class Config:
         json_encoders = {
@@ -42,7 +44,9 @@ class RepositoryResponse(BaseModel):
                 "name": "nginx",
                 "tag_count": 15,
                 "last_updated": "2023-12-01T12:00:00Z",
-                "size_bytes": 142857600
+                "size_bytes": 142857600,
+                "match_type": "repository_name",
+                "matched_tags": []
             }
         }
 
@@ -267,7 +271,9 @@ async def list_repositories(
                 name=repo["name"],
                 tag_count=repo.get("tag_count", 0),
                 last_updated=repo.get("last_updated"),
-                size_bytes=repo.get("size_bytes")
+                size_bytes=repo.get("size_bytes"),
+                match_type=repo.get("match_type"),
+                matched_tags=repo.get("matched_tags")
             )
             repo_responses.append(repo_response)
         

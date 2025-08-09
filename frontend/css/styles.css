@@ -245,7 +245,8 @@ body {
     margin-bottom: 16px;
     overflow: hidden;
     transition: all 0.3s ease;
-    animation: fadeIn 0.5s ease-out;
+    opacity: 0;
+    animation: cardFadeInUp 0.5s ease-out forwards;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
@@ -257,6 +258,17 @@ body {
     to {
         opacity: 1;
         transform: translateX(0);
+    }
+}
+
+@keyframes cardFadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
@@ -298,6 +310,37 @@ body {
     gap: 30px;
     color: #757575;
     font-size: 0.9em;
+}
+
+/* Match indicator for search results */
+.match-indicator {
+    margin-top: 8px;
+    margin-bottom: 4px;
+}
+
+.match-badge {
+    display: inline-block;
+    background: #fff3cd;
+    color: #856404;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 1px solid #ffeaa7;
+}
+
+/* Highlight matched tags in the table */
+.matched-tag-row {
+    background-color: #fff9e6 !important;
+}
+
+.matched-tag-row:hover {
+    background-color: #fff3cd !important;
+}
+
+.matched-tag-name {
+    font-weight: 600;
+    color: #856404;
 }
 
 .expand-icon {
