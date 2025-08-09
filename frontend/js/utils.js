@@ -15,14 +15,172 @@ App.Utils = (function() {
 
     return {
         /**
-         * Debounce function to limit the rate of function calls
+         * Enhanced debounce function with immediate, trailing, leading, and maxWait options
+         * @param {Function} func - The function to debounce
+         * @param {number} delay - The delay in milliseconds
+         * @param {Object} options - Configuration options
+         * @param {boolean} options.immediate - Execute immediately on first call
+         * @param {number} options.maxWait - Maximum time to wait before forced execution
+         * @param {boolean} options.trailing - Execute on trailing edge (default: true)
+         * @param {boolean} options.leading - Execute on leading edge
+         * @returns {Function} The debounced function with cancel and flush methods
+         */
+        debounceEnhanced(func, delay, options = {}) {
+            let timeoutId = null;
+            let maxTimeoutId = null;
+            let lastCallTime = 0;
+            let lastInvokeTime = 0;
+            let lastArgs = null;
+            let lastThis = null;
+            let result = null;
+            
+            const {
+                immediate = false,
+                maxWait = null,
+                trailing = true,
+                leading = false
+            } = options;
+            
+            // Invoke the function
+            function invokeFunc(time) {
+                const args = lastArgs;
+                const thisArg = lastThis;
+                
+                lastArgs = null;
+                lastThis = null;
+                lastInvokeTime = time;
+                result = func.apply(thisArg, args);
+                return result;
+            }
+            
+            // Start timer for trailing edge
+            function startTimer(pendingFunc, wait) {
+                return setTimeout(pendingFunc, wait);
+            }
+            
+            // Cancel all timers
+            function cancelTimer(id) {
+                if (id !== null) {
+                    clearTimeout(id);
+                }
+            }
+            
+            // Leading edge handler
+            function leadingEdge(time) {
+                lastInvokeTime = time;
+                timeoutId = startTimer(timerExpired, delay);
+                return leading ? invokeFunc(time) : result;
+            }
+            
+            // Calculate remaining wait time
+            function remainingWait(time) {
+                const timeSinceLastCall = time - lastCallTime;
+                const timeSinceLastInvoke = time - lastInvokeTime;
+                const timeWaiting = delay - timeSinceLastCall;
+                
+                return maxWait !== null 
+                    ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke)
+                    : timeWaiting;
+            }
+            
+            // Check if we should invoke now
+            function shouldInvoke(time) {
+                const timeSinceLastCall = time - lastCallTime;
+                const timeSinceLastInvoke = time - lastInvokeTime;
+                
+                return (
+                    lastCallTime === 0 ||
+                    timeSinceLastCall >= delay ||
+                    timeSinceLastCall < 0 ||
+                    (maxWait !== null && timeSinceLastInvoke >= maxWait)
+                );
+            }
+            
+            // Timer expired handler
+            function timerExpired() {
+                const time = Date.now();
+                if (shouldInvoke(time)) {
+                    return trailingEdge(time);
+                }
+                // Restart timer
+                timeoutId = startTimer(timerExpired, remainingWait(time));
+            }
+            
+            // Trailing edge handler
+            function trailingEdge(time) {
+                timeoutId = null;
+                
+                // Only invoke if we have lastArgs which means func was called
+                if (trailing && lastArgs) {
+                    return invokeFunc(time);
+                }
+                lastArgs = null;
+                lastThis = null;
+                return result;
+            }
+            
+            // Main debounced function
+            function debounced(...args) {
+                const time = Date.now();
+                const isInvoking = shouldInvoke(time);
+                
+                lastArgs = args;
+                lastThis = this;
+                lastCallTime = time;
+                
+                if (isInvoking) {
+                    if (timeoutId === null) {
+                        return leadingEdge(lastCallTime);
+                    }
+                    if (maxWait !== null) {
+                        // Handle maxWait
+                        timeoutId = startTimer(timerExpired, delay);
+                        return invokeFunc(lastCallTime);
+                    }
+                }
+                
+                if (timeoutId === null) {
+                    timeoutId = startTimer(timerExpired, delay);
+                }
+                
+                return result;
+            }
+            
+            // Cancel method
+            debounced.cancel = function() {
+                if (timeoutId !== null) {
+                    cancelTimer(timeoutId);
+                }
+                if (maxTimeoutId !== null) {
+                    cancelTimer(maxTimeoutId);
+                }
+                
+                lastInvokeTime = 0;
+                lastArgs = null;
+                lastCallTime = 0;
+                lastThis = null;
+                timeoutId = null;
+                maxTimeoutId = null;
+            };
+            
+            // Flush method - immediately invoke pending function
+            debounced.flush = function() {
+                return timeoutId === null ? result : trailingEdge(Date.now());
+            };
+            
+            // Check if debounced function has pending invocation
+            debounced.pending = function() {
+                return timeoutId !== null;
+            };
+            
+            return debounced;
+        },
+        
+        /**
+         * Basic debounce function (maintained for backward compatibility)
          */
         debounce(func, delay) {
-            let timeoutId;
-            return function(...args) {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => func.apply(this, args), delay);
-            };
+            return this.debounceEnhanced(func, delay, { trailing: true });
         },
 
         /**

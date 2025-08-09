@@ -506,68 +506,68 @@
       {
         "id": 10,
         "title": "Build search and filter functionality",
-        "description": "Implement real-time search for repositories and tags with debouncing",
-        "status": "pending",
-        "priority": "medium",
-        "details": "Create search input handlers with debouncing. Implement client-side filtering as fallback. Update UI dynamically with search results. Maintain search state across navigation. Add clear search functionality.",
-        "testStrategy": "Test search with various inputs, verify debounce timing, check result accuracy, test clear functionality",
+        "description": "실시간 검색 및 필터링 기능을 구현하여 리포지토리와 태그를 효율적으로 검색",
+        "status": "done",
         "dependencies": [
           9
         ],
+        "priority": "medium",
+        "details": "SearchManager, FilterEngine, StateSync 컴포넌트를 활용한 모듈형 아키텍처 구현. 300ms 디바운스와 최대 1초 대기 시간을 가진 실시간 검색. 퍼지 매칭, 하이라이팅, 스코어링을 지원하는 클라이언트 측 필터링. URL 상태 동기화로 북마크 가능한 검색 및 브라우저 히스토리 지원. 키보드 단축키 지원 (Ctrl+K 포커스, Escape 초기화, Enter 네비게이션).\n\n**현재 진행 상황:**\n- ✅ 포괄적인 아키텍처 설계 완료 (SearchManager, FilterEngine, StateSync)\n- ✅ 기존 코드베이스 분석 완료 (SearchComponent, 기본 debounce, searchQuery 상태 존재)\n- ✅ Subtask 10.1 완료: 검색 입력 컴포넌트 및 이벤트 시스템 구현\n  - App.SearchKeyboard 모듈: Ctrl+K, Escape 단축키 시스템 구현\n  - App.SearchInput 모듈: 입력 처리, 검증, 상태 관리 완료\n  - 300ms 디바운스 적용, XSS 방지, 자동 초기화 버튼 처리\n- ⏳ Subtask 10.2 진행 예정: 향상된 디바운스 유틸리티 구현",
+        "testStrategy": "다양한 입력으로 검색 테스트, 디바운스 타이밍 검증 (300ms/1s), 퍼지 매칭 및 스코어링 정확도 확인, URL 동기화 테스트, 키보드 단축키 동작 확인 (Ctrl+K, Escape 검증 완료), 성능 추적 메트릭 검증, XSS 방지 처리 검증 완료",
         "subtasks": [
           {
             "id": 1,
-            "title": "검색 입력 필드 및 이벤트 핸들러 구현",
-            "description": "검색 입력 필드를 생성하고 실시간 입력 이벤트를 처리하는 핸들러를 구현합니다",
+            "title": "검색 입력 컴포넌트 및 이벤트 시스템 구현",
+            "description": "SearchManager 아키텍처 기반 검색 입력 컴포넌트와 이벤트 처리 시스템을 구현합니다",
+            "status": "done",
             "dependencies": [],
-            "details": "index.html에 검색 입력 필드 추가. app.js에 입력 이벤트 리스너 설정. 검색어 검증 및 정규화 로직 구현. 빈 검색어 처리 및 특수문자 이스케이프 적용.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "기존 HTML search-container를 활용하여 실제 검색 입력 UI 구현. data-search-input 속성을 가진 입력 필드 완성. App.Events 시스템과 통합된 이벤트 리스너 설정. Ctrl+K 포커스 단축키, Enter 첫 번째 결과 네비게이션 구현. 검색어 검증 및 정규화 로직 적용. 특수문자 이스케이프 및 XSS 방지 처리.",
+            "testStrategy": "키보드 단축키 동작 확인, 이벤트 핸들링 테스트, XSS 공격 시나리오 검증"
           },
           {
             "id": 2,
-            "title": "디바운스 유틸리티 함수 구현",
-            "description": "검색 입력에 대한 디바운스 기능을 구현하여 불필요한 API 호출을 방지합니다",
+            "title": "향상된 디바운스 유틸리티 구현",
+            "description": "immediate, trailing, leading 엣지 옵션과 maxWait 기능을 갖춘 고급 디바운스 시스템을 구현합니다",
+            "status": "done",
             "dependencies": [
-              "10.1"
+              1
             ],
-            "details": "utils.js에 디바운스 함수 작성 (300-500ms 지연). 검색 입력 핸들러에 디바운스 적용. 이전 타이머 취소 로직 구현. 즉시 실행 옵션 추가.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "기존 utils.js의 기본 debounce를 고급 버전으로 업그레이드 (300ms 기본 지연, 1000ms maxWait). leading/trailing 엣지 제어 옵션 구현. 타이머 취소 및 즉시 실행 메서드 제공. SearchManager와 통합하여 연속 타이핑 시 최대 1초 후 강제 실행. 기존 300ms 디바운스와 호환성 유지하면서 maxWait 기능 추가.",
+            "testStrategy": "디바운스 타이밍 정확도 테스트, maxWait 동작 검증, 엣지 케이스 처리 확인, 기존 검색 기능과의 통합 테스트"
           },
           {
             "id": 3,
-            "title": "검색 상태 관리 시스템 구축",
-            "description": "검색어와 결과를 관리하는 상태 관리 시스템을 구현합니다",
+            "title": "StateSync 기반 검색 상태 관리 시스템 구축",
+            "description": "App.State와 통합된 검색 상태 관리 및 URL 동기화 시스템을 구현합니다",
+            "status": "done",
             "dependencies": [
-              "10.1",
-              "10.2"
+              1,
+              2
             ],
-            "details": "전역 검색 상태 객체 생성. URL 파라미터와 동기화 로직 구현. 페이지 새로고침 시 상태 복원. 검색 히스토리 관리 (선택사항).",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "기존 App.State.searchQuery를 확장하여 완전한 검색 상태 관리 시스템 구축. URLSearchParams를 활용한 URL 파라미터 동기화 구현. popstate 이벤트로 브라우저 뒤로/앞으로 지원. 검색 히스토리 관리 (최근 5개 저장). 성능 추적 메트릭 수집 (검색 시간, 결과 수, 사용 빈도). 이미 구현된 App.SearchInput 모듈과 원활하게 연동.",
+            "testStrategy": "URL 동기화 테스트, 브라우저 히스토리 네비게이션 검증, 성능 메트릭 정확도 확인"
           },
           {
             "id": 4,
-            "title": "검색 결과 UI 업데이트 및 필터링",
-            "description": "검색 결과에 따라 동적으로 UI를 업데이트하고 필터링된 결과를 표시합니다",
+            "title": "FilterEngine 기반 고급 필터링 및 UI 업데이트",
+            "description": "퍼지 매칭, 스코어링, 하이라이팅을 지원하는 필터링 엔진을 구현하고 UI를 업데이트합니다",
+            "status": "done",
             "dependencies": [
-              "10.3"
+              3
             ],
-            "details": "리포지토리 카드 필터링 로직 구현. 검색 결과 개수 표시. 결과 없음 메시지 처리. 하이라이트 기능으로 검색어 강조. 태그 레벨 검색 지원.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "새로운 FilterEngine 클래스 구현 (퍼지 매칭 알고리즘, 관련성 스코어링). 기존 SearchComponent를 확장하여 고급 필터링 기능 추가. App.Render와 통합하여 동적 UI 업데이트. 검색어 하이라이팅 (mark 태그 사용). 리포지토리 및 태그 레벨 검색 지원. 검색 결과 카운터 및 '결과 없음' 메시지 처리 (이미 HTML에 구현된 요소 활용). 스코어 기반 결과 정렬.",
+            "testStrategy": "퍼지 매칭 정확도 테스트, 스코어링 알고리즘 검증, 하이라이팅 시각적 테스트"
           },
           {
             "id": 5,
-            "title": "검색 초기화 및 리셋 기능 구현",
-            "description": "검색을 초기화하고 전체 목록으로 돌아가는 기능을 구현합니다",
+            "title": "검색 초기화 시스템 및 애니메이션 구현",
+            "description": "검색 초기화 기능과 시각적 피드백 애니메이션을 구현합니다",
+            "status": "done",
             "dependencies": [
-              "10.4"
+              4
             ],
-            "details": "검색 초기화 버튼 추가 (X 아이콘). 초기화 시 전체 목록 복원. URL 파라미터 제거. 검색 입력 필드 비우기. 스크롤 위치 유지 또는 상단 이동 옵션.",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "이미 구현된 검색 초기화 버튼 기능 확장 (X 아이콘, data-search-clear 속성). Escape 키 단축키 기능 개선 (이미 App.SearchKeyboard에 구현됨). 페이드 아웃 애니메이션 후 전체 목록 복원. URL 파라미터 제거 및 히스토리 업데이트. 스크롤 위치 저장/복원 옵션. 초기화 완료 시 시각적 피드백 제공. 기존 구현과의 완벽한 통합.",
+            "testStrategy": "초기화 동작 검증, 애니메이션 타이밍 테스트, 상태 복원 정확도 확인"
           }
         ]
       },
@@ -990,7 +990,7 @@
       "lastUpdated": "2025-01-07T10:00:00Z",
       "version": "1.0.0",
       "created": "2025-08-07T11:37:59.167Z",
-      "updated": "2025-08-08T23:50:07.805Z"
+      "updated": "2025-08-09T00:55:24.523Z"
     }
   }
 }

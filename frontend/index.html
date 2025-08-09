@@ -23,7 +23,38 @@
     <!-- Main Application Container -->
     <div id="app" class="app-container">
         <!-- Search Container -->
-        <div id="search-container" class="search-container"></div>
+        <div id="search-container" class="search-container">
+            <div class="search-wrapper">
+                <div class="search-input-group">
+                    <span class="search-icon" aria-hidden="true">🔍</span>
+                    <input 
+                        type="text" 
+                        id="search-input"
+                        class="search-input"
+                        placeholder="Search repositories and tags..."
+                        autocomplete="off"
+                        spellcheck="false"
+                        aria-label="Search repositories and tags"
+                        role="searchbox"
+                        data-search-input
+                    />
+                    <button 
+                        type="button" 
+                        id="search-clear"
+                        class="search-clear"
+                        aria-label="Clear search"
+                        style="display: none;"
+                        data-search-clear
+                    >
+                        <span aria-hidden="true">✕</span>
+                    </button>
+                </div>
+                <div class="search-results-info" id="search-info" style="display: none;">
+                    <span id="search-count" class="search-count">0 repositories found</span>
+                    <span id="search-query" class="search-query"></span>
+                </div>
+            </div>
+        </div>
         
         <!-- Sort Container -->
         <div id="sort-container" class="sort-container"></div>
