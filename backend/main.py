@@ -9,7 +9,7 @@ from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 import os
 import asyncio
-from typing import Dict
+from typing import Dict, Any
 
 # Load environment variables
 load_dotenv()
@@ -59,14 +59,14 @@ async def health_check() -> Dict[str, str]:
 
 # Cache stats endpoint
 @app.get("/api/cache/stats")
-async def cache_stats() -> Dict[str, any]:
+async def cache_stats() -> Dict[str, Any]:
     """Get cache statistics"""
     stats = await cache_service.get_stats()
     return stats
 
 # Clear cache endpoint (for manual refresh)
 @app.post("/api/cache/clear")
-async def clear_cache(pattern: str = None) -> Dict[str, any]:
+async def clear_cache(pattern: str = None) -> Dict[str, Any]:
     """Clear cache entries"""
     count = await cache_service.clear(pattern)
     return {"cleared": count, "pattern": pattern}
