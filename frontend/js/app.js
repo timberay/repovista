@@ -912,18 +912,34 @@ App.SearchStateSync = (function() {
             // Listen to search state changes to update URL
             if (App.State && App.State.subscribe) {
                 App.State.subscribe('searchQuery', this.handleSearchQueryChange.bind(this));
+                App.State.subscribe('currentPage', this.handlePaginationChange.bind(this));
+                App.State.subscribe('pageSize', this.handlePaginationChange.bind(this));
+                App.State.subscribe('sortBy', this.handleSortChange.bind(this));
             }
             
             // Listen to search events to update URL
             App.Events.listen('search:query', this.handleSearchEvent.bind(this));
             App.Events.listen('search:cleared', this.handleSearchClear.bind(this));
+            
+            // Listen to data load events to validate page numbers
+            App.Events.listen('data:loaded', this.handleDataLoaded.bind(this));
         },
         
         // Restore search state from URL parameters
         restoreFromURL: function() {
             const params = new URLSearchParams(window.location.search);
             const query = params.get('q') || '';
-            const page = parseInt(params.get('page')) || 1;
+            
+            // Validate and sanitize page number
+            let page = this.validatePageNumber(parseInt(params.get('page')));
+            
+            // Get page size from URL first, then fallback to localStorage, then to default
+            let size = this.validatePageSize(parseInt(params.get('size')));
+            if (!size) {
+                const storedSize = this.getStoredPageSize();
+                size = storedSize || 20;
+            }
+            
             const sort = params.get('sort') || 'name-asc';
             
             // Update application state without triggering URL update
@@ -933,6 +949,7 @@ App.SearchStateSync = (function() {
                 App.State.setState({
                     searchQuery: query,
                     currentPage: page,
+                    pageSize: size,
                     sortBy: sort
                 });
             }
@@ -944,7 +961,7 @@ App.SearchStateSync = (function() {
             
             isUpdatingURL = false;
             
-            return { query, page, sort };
+            return { query, page, size, sort };
         },
         
         // Update URL with current search state
@@ -953,6 +970,7 @@ App.SearchStateSync = (function() {
             
             const query = App.State ? App.State.get('searchQuery') : '';
             const currentPage = App.State ? App.State.get('currentPage') : 1;
+            const pageSize = App.State ? App.State.get('pageSize') : 20;
             const sortBy = App.State ? App.State.get('sortBy') : 'name-asc';
             
             const params = new URLSearchParams(window.location.search);
@@ -969,6 +987,13 @@ App.SearchStateSync = (function() {
                 params.set('page', currentPage.toString());
             } else {
                 params.delete('page');
+            }
+            
+            // Update or remove size parameter (only if not default)
+            if (pageSize && pageSize !== 20) {
+                params.set('size', pageSize.toString());
+            } else {
+                params.delete('size');
             }
             
             // Update or remove sort parameter (only if not default)
@@ -988,6 +1013,7 @@ App.SearchStateSync = (function() {
                     { 
                         searchQuery: query, 
                         currentPage: currentPage, 
+                        pageSize: pageSize,
                         sortBy: sortBy 
                     },
                     '',
@@ -1007,8 +1033,8 @@ App.SearchStateSync = (function() {
         handlePopState: function(event) {
             if (event.state) {
                 // Restore from history state
-                const { searchQuery, currentPage, sortBy } = event.state;
-                this.restoreStateFromHistory(searchQuery, currentPage, sortBy);
+                const { searchQuery, currentPage, pageSize, sortBy } = event.state;
+                this.restoreStateFromHistory(searchQuery, currentPage, pageSize, sortBy);
             } else {
                 // No state available, restore from URL
                 this.restoreFromURL();
@@ -1016,13 +1042,19 @@ App.SearchStateSync = (function() {
         },
         
         // Restore state from browser history
-        restoreStateFromHistory: function(searchQuery, currentPage, sortBy) {
+        restoreStateFromHistory: function(searchQuery, currentPage, pageSize, sortBy) {
             isUpdatingURL = true;
+            
+            // Use stored page size as fallback if not provided in history
+            if (!pageSize) {
+                pageSize = this.getStoredPageSize() || 20;
+            }
             
             if (App.State) {
                 App.State.setState({
                     searchQuery: searchQuery || '',
                     currentPage: currentPage || 1,
+                    pageSize: pageSize,
                     sortBy: sortBy || 'name-asc'
                 });
             }
@@ -1036,6 +1068,7 @@ App.SearchStateSync = (function() {
             App.Events.emit('search:restored', {
                 query: searchQuery || '',
                 page: currentPage || 1,
+                size: pageSize || 20,
                 sort: sortBy || 'name-asc'
             });
             
@@ -1071,12 +1104,31 @@ App.SearchStateSync = (function() {
             }
         },
         
+        // Handle pagination state changes
+        handlePaginationChange: function(newValue, oldValue, key) {
+            if (!isUpdatingURL) {
+                // Store page size in localStorage when it changes
+                if (key === 'pageSize' && newValue !== oldValue) {
+                    this.storePageSize(newValue);
+                }
+                this.updateURL();
+            }
+        },
+        
+        // Handle sort state changes
+        handleSortChange: function(newValue, oldValue, key) {
+            if (!isUpdatingURL) {
+                this.updateURL();
+            }
+        },
+        
         // Get current URL parameters as object
         getURLParams: function() {
             const params = new URLSearchParams(window.location.search);
             return {
                 query: params.get('q') || '',
                 page: parseInt(params.get('page')) || 1,
+                size: parseInt(params.get('size')) || 20,
                 sort: params.get('sort') || 'name-asc'
             };
         },
@@ -1085,12 +1137,13 @@ App.SearchStateSync = (function() {
         setURLParams: function(newParams) {
             isUpdatingURL = true;
             
-            const { query, page, sort } = newParams;
+            const { query, page, size, sort } = newParams;
             
             if (App.State) {
                 App.State.setState({
                     searchQuery: query || '',
                     currentPage: page || 1,
+                    pageSize: size || 20,
                     sortBy: sort || 'name-asc'
                 });
             }
@@ -1107,15 +1160,113 @@ App.SearchStateSync = (function() {
         getBookmarkableURL: function() {
             const query = App.State ? App.State.get('searchQuery') : '';
             const currentPage = App.State ? App.State.get('currentPage') : 1;
+            const pageSize = App.State ? App.State.get('pageSize') : 20;
             const sortBy = App.State ? App.State.get('sortBy') : 'name-asc';
             
             const params = new URLSearchParams();
             if (query && query.trim()) params.set('q', query.trim());
             if (currentPage > 1) params.set('page', currentPage.toString());
+            if (pageSize !== 20) params.set('size', pageSize.toString());
             if (sortBy !== 'name-asc') params.set('sort', sortBy);
             
             const queryString = params.toString();
             return `${window.location.origin}${window.location.pathname}${queryString ? '?' + queryString : ''}`;
+        },
+        
+        // LocalStorage helpers
+        getStoredPageSize: function() {
+            try {
+                const stored = localStorage.getItem('repovista-page-size');
+                if (stored) {
+                    const size = parseInt(stored);
+                    // Validate that it's one of the allowed sizes
+                    if ([20, 50, 100].includes(size)) {
+                        return size;
+                    }
+                }
+            } catch (error) {
+                console.warn('Error reading from localStorage:', error);
+            }
+            return null;
+        },
+        
+        storePageSize: function(pageSize) {
+            try {
+                // Only store if it's one of the allowed sizes and not the default
+                if ([20, 50, 100].includes(pageSize)) {
+                    localStorage.setItem('repovista-page-size', pageSize.toString());
+                }
+            } catch (error) {
+                console.warn('Error writing to localStorage:', error);
+            }
+        },
+        
+        // Handle data loaded to validate page numbers
+        handleDataLoaded: function(data) {
+            if (!isUpdatingURL && App.State) {
+                const currentPage = App.State.get('currentPage');
+                const totalPages = App.State.get('totalPages') || 1;
+                
+                // Validate current page against total pages
+                const validPage = this.validateAndFixPageNumber(currentPage, totalPages);
+                
+                if (validPage !== currentPage) {
+                    // Update state and URL if page was invalid
+                    App.State.set('currentPage', validPage);
+                    this.updateURL();
+                }
+            }
+        },
+        
+        // Validation helpers for URL parameters
+        validatePageNumber: function(page) {
+            // Handle invalid, negative, or zero page numbers
+            if (!page || isNaN(page) || page < 1) {
+                return 1;
+            }
+            
+            // For now, just ensure it's a positive integer
+            // We'll validate against totalPages later when we have that data
+            return Math.max(1, Math.floor(page));
+        },
+        
+        validatePageSize: function(size) {
+            // Only allow valid page sizes
+            if (!size || isNaN(size)) {
+                return null;
+            }
+            
+            const allowedSizes = [20, 50, 100];
+            if (allowedSizes.includes(size)) {
+                return size;
+            }
+            
+            // Return closest valid size
+            const closest = allowedSizes.reduce((prev, curr) => 
+                Math.abs(curr - size) < Math.abs(prev - size) ? curr : prev
+            );
+            
+            return closest;
+        },
+        
+        // Validate page against total pages and redirect if necessary
+        validateAndFixPageNumber: function(page, totalPages) {
+            if (!totalPages || totalPages < 1) {
+                return 1;
+            }
+            
+            if (page > totalPages) {
+                // Redirect to last valid page
+                console.warn(`Page ${page} exceeds total pages ${totalPages}, redirecting to page ${totalPages}`);
+                return totalPages;
+            }
+            
+            if (page < 1) {
+                console.warn(`Invalid page ${page}, redirecting to page 1`);
+                return 1;
+            }
+            
+            return page;
         },
         
         // Cleanup
@@ -1124,6 +1275,9 @@ App.SearchStateSync = (function() {
             
             if (App.State && App.State.unsubscribe) {
                 App.State.unsubscribe('searchQuery', this.handleSearchQueryChange.bind(this));
+                App.State.unsubscribe('currentPage', this.handlePaginationChange.bind(this));
+                App.State.unsubscribe('pageSize', this.handlePaginationChange.bind(this));
+                App.State.unsubscribe('sortBy', this.handleSortChange.bind(this));
             }
         }
     };

@@ -102,11 +102,23 @@
             tags, 
             repository,
             onTagSelect,
-            onCopyCommand 
+            onCopyCommand,
+            sortBy = 'name-asc' // Default sort for tags
         } = props;
 
+        // Apply sorting to tags if SortUtils is available
+        let sortedTags = tags;
+        if (App.SortUtils && tags && tags.length > 0) {
+            try {
+                sortedTags = App.SortUtils.sortTags(tags, sortBy);
+            } catch (error) {
+                console.warn('Error sorting tags:', error);
+                sortedTags = tags; // Fallback to original order
+            }
+        }
+
         // Use virtual scrolling for large tag lists (>50 items)
-        if (tags.length > 50 && App.VirtualScroller) {
+        if (sortedTags.length > 50 && App.VirtualScroller) {
             return h('div', { 
                 className: 'tag-list virtual-scroll-container',
                 id: `tag-list-${repository.replace(/[^a-zA-Z0-9]/g, '-')}`
@@ -114,7 +126,7 @@
         }
 
         return h('div', { className: 'tag-list' },
-            ...tags.map(tag => TagItem({
+            ...sortedTags.map(tag => TagItem({
                 tag,
                 repository,
                 onSelect: onTagSelect,
@@ -255,87 +267,146 @@
      */
     const Pagination = (props) => {
         const {
-            currentPage,
-            totalPages,
-            totalItems,
-            pageSize,
+            currentPage = 1,
+            totalPages = 1,
+            totalItems = 0,
+            pageSize = 20,
             onPageChange,
             onPageSizeChange
         } = props;
 
-        // Calculate page range
-        const pageRange = calculatePageRange(currentPage, totalPages);
-        
-        // Calculate item range
-        const startItem = (currentPage - 1) * pageSize + 1;
-        const endItem = Math.min(currentPage * pageSize, totalItems);
+        // Validate props and handle edge cases
+        if (totalItems <= 0 || totalPages <= 0) {
+            return null; // Hide pagination when no items
+        }
 
-        return h('div', { className: 'pagination-container' },
-            // Item count
-            h('div', { className: 'pagination-info' },
-                h('span', { className: 'item-count' },
+        // Ensure current page is within bounds
+        const validCurrentPage = Math.max(1, Math.min(currentPage, totalPages));
+        const validPageSize = Math.max(1, pageSize);
+        const validTotalPages = Math.max(1, totalPages);
+
+        // Calculate page range
+        const pageRange = calculatePageRange(validCurrentPage, validTotalPages);
+        
+        // Calculate item range with bounds checking
+        const startItem = Math.max(1, (validCurrentPage - 1) * validPageSize + 1);
+        const endItem = Math.min(validCurrentPage * validPageSize, totalItems);
+
+        return h('nav', { 
+            className: 'pagination-container',
+            role: 'navigation',
+            'aria-label': 'Repository pagination',
+            'data-testid': 'pagination-navigation'
+        },
+            // Item count with screen reader announcement
+            h('div', { 
+                className: 'pagination-info',
+                'aria-live': 'polite',
+                'aria-atomic': 'true'
+            },
+                h('span', { 
+                    className: 'item-count',
+                    id: 'pagination-status'
+                },
                     App.text(`Showing ${startItem}-${endItem} of ${totalItems} repositories`)
                 )
             ),
             
-            // Pagination controls
-            h('div', { className: 'pagination-controls' },
+            // Pagination controls with proper ARIA attributes
+            h('div', { 
+                className: 'pagination-controls',
+                role: 'group',
+                'aria-describedby': 'pagination-status'
+            },
                 // Previous button
                 h('button', {
-                    className: 'page-button prev',
-                    disabled: currentPage === 1,
-                    onClick: () => onPageChange(currentPage - 1),
-                    'aria-label': 'Previous page'
+                    className: 'pagination-button prev',
+                    disabled: validCurrentPage === 1,
+                    onClick: () => onPageChange && onPageChange(Math.max(1, validCurrentPage - 1)),
+                    'aria-label': validCurrentPage === 1 
+                        ? 'Previous page (unavailable)' 
+                        : `Go to previous page, page ${validCurrentPage - 1}`,
+                    'aria-disabled': validCurrentPage === 1 ? 'true' : 'false',
+                    type: 'button'
                 },
-                    h('span', {}, App.text('← Previous'))
+                    h('span', { 'aria-hidden': 'true' }, App.text('← Previous'))
                 ),
                 
                 // Page numbers
-                h('div', { className: 'page-numbers' },
-                    ...pageRange.map(page => {
+                h('div', { 
+                    className: 'page-numbers',
+                    role: 'list',
+                    'aria-label': 'Page numbers'
+                },
+                    ...pageRange.map((page, index) => {
                         if (page === '...') {
                             return h('span', { 
                                 className: 'page-ellipsis',
-                                key: `ellipsis-${Math.random()}`
+                                key: `ellipsis-${index}`,
+                                'aria-hidden': 'true',
+                                role: 'presentation'
                             }, App.text('...'));
                         }
                         
                         return h('button', {
-                            className: `page-button ${page === currentPage ? 'active' : ''}`,
+                            className: `pagination-button ${page === validCurrentPage ? 'active' : ''}`,
                             'data-page': page,
                             key: `page-${page}`,
-                            onClick: () => onPageChange(page),
-                            'aria-label': `Go to page ${page}`,
-                            'aria-current': page === currentPage ? 'page' : undefined
+                            onClick: () => onPageChange && onPageChange(page),
+                            'aria-label': page === validCurrentPage 
+                                ? `Current page, page ${page}` 
+                                : `Go to page ${page}`,
+                            'aria-current': page === validCurrentPage ? 'page' : false,
+                            'aria-pressed': page === validCurrentPage ? 'true' : 'false',
+                            type: 'button',
+                            role: 'listitem'
                         }, App.text(page.toString()));
                     })
                 ),
                 
                 // Next button
                 h('button', {
-                    className: 'page-button next',
-                    disabled: currentPage === totalPages,
-                    onClick: () => onPageChange(currentPage + 1),
-                    'aria-label': 'Next page'
+                    className: 'pagination-button next',
+                    disabled: validCurrentPage >= validTotalPages,
+                    onClick: () => onPageChange && onPageChange(Math.min(validTotalPages, validCurrentPage + 1)),
+                    'aria-label': validCurrentPage >= validTotalPages 
+                        ? 'Next page (unavailable)' 
+                        : `Go to next page, page ${validCurrentPage + 1}`,
+                    'aria-disabled': validCurrentPage >= validTotalPages ? 'true' : 'false',
+                    type: 'button'
                 },
-                    h('span', {}, App.text('Next →'))
+                    h('span', { 'aria-hidden': 'true' }, App.text('Next →'))
                 )
             ),
             
             // Page size selector
-            h('div', { className: 'page-size-selector' },
-                h('label', { htmlFor: 'page-size' },
+            h('div', { 
+                className: 'page-size-selector',
+                role: 'group',
+                'aria-labelledby': 'page-size-label'
+            },
+                h('label', { 
+                    htmlFor: 'page-size',
+                    id: 'page-size-label',
+                    className: 'page-size-label'
+                },
                     App.text('Items per page:')
                 ),
                 h('select', {
                     id: 'page-size',
-                    value: pageSize,
-                    onChange: (e) => onPageSizeChange(parseInt(e.target.value, 10))
+                    value: validPageSize,
+                    onChange: (e) => {
+                        const newSize = parseInt(e.target.value, 10);
+                        if (onPageSizeChange && [20, 50, 100].includes(newSize)) {
+                            onPageSizeChange(newSize);
+                        }
+                    },
+                    'aria-label': 'Select number of items to display per page',
+                    'aria-describedby': 'page-size-label pagination-status'
                 },
-                    h('option', { value: 10 }, App.text('10')),
-                    h('option', { value: 20 }, App.text('20')),
-                    h('option', { value: 50 }, App.text('50')),
-                    h('option', { value: 100 }, App.text('100'))
+                    h('option', { value: 20 }, App.text('20 items')),
+                    h('option', { value: 50 }, App.text('50 items')),
+                    h('option', { value: 100 }, App.text('100 items'))
                 )
             )
         );
@@ -384,36 +455,74 @@
     const SortControls = (props) => {
         const { currentSort = 'name-asc', onSortChange } = props;
 
-        const sortOptions = [
-            { value: 'name-asc', label: 'Name (A-Z)', icon: '🔤' },
-            { value: 'name-desc', label: 'Name (Z-A)', icon: '🔤' },
-            { value: 'date-desc', label: 'Newest First', icon: '📅' },
-            { value: 'date-asc', label: 'Oldest First', icon: '📅' },
-            { value: 'tags-desc', label: 'Most Tags', icon: '🏷️' },
-            { value: 'tags-asc', label: 'Least Tags', icon: '🏷️' }
+        // Parse current sort to get field and direction
+        const parsedSort = App.SortUtils ? App.SortUtils.parseSortString(currentSort) : { field: 'name', direction: 'asc' };
+        const currentField = parsedSort.field;
+        const currentDirection = parsedSort.direction;
+
+        // Define sort field options
+        const sortFields = [
+            { value: 'name', label: 'Name', icon: '🔤' },
+            { value: 'date', label: 'Date', icon: '📅' },
+            { value: 'tags', label: 'Tags', icon: '🏷️' }
         ];
+
+        // Handle field change
+        const handleFieldChange = (field) => {
+            const newSort = `${field}-${currentDirection}`;
+            onSortChange(newSort);
+        };
+
+        // Handle direction toggle
+        const handleDirectionToggle = () => {
+            const newDirection = currentDirection === 'asc' ? 'desc' : 'asc';
+            const newSort = `${currentField}-${newDirection}`;
+            onSortChange(newSort);
+        };
+
+        // Get direction icon and label
+        const getDirectionIcon = () => currentDirection === 'asc' ? '🔼' : '🔽';
+        const getDirectionLabel = () => currentDirection === 'asc' ? 'Ascending' : 'Descending';
 
         return h('div', { className: 'sort-controls' },
             h('label', { className: 'sort-label' },
                 h('span', { className: 'sort-icon' }, '↕️'),
                 App.text('Sort by:')
             ),
-            h('div', { className: 'sort-options' },
-                ...sortOptions.map(option => 
-                    h('button', {
-                        className: `sort-option ${currentSort === option.value ? 'active' : ''}`,
-                        'data-sort': option.value,
-                        key: option.value,
-                        onClick: () => onSortChange(option.value),
-                        'aria-label': `Sort by ${option.label}`,
-                        'aria-pressed': currentSort === option.value
-                    },
-                        h('span', { className: 'option-icon' }, 
-                            App.text(option.icon)
-                        ),
-                        h('span', { className: 'option-label' }, 
-                            App.text(option.label)
+            h('div', { className: 'sort-controls-group' },
+                // Sort field options
+                h('div', { className: 'sort-fields' },
+                    ...sortFields.map(field => 
+                        h('button', {
+                            className: `sort-field ${currentField === field.value ? 'active' : ''}`,
+                            'data-sort-field': field.value,
+                            key: field.value,
+                            onClick: () => handleFieldChange(field.value),
+                            'aria-label': `Sort by ${field.label}`,
+                            'aria-pressed': currentField === field.value
+                        },
+                            h('span', { className: 'field-icon' }, 
+                                App.text(field.icon)
+                            ),
+                            h('span', { className: 'field-label' }, 
+                                App.text(field.label)
+                            )
                         )
+                    )
+                ),
+                // Direction toggle button
+                h('button', {
+                    className: 'sort-direction-toggle',
+                    'data-sort-direction': currentDirection,
+                    onClick: handleDirectionToggle,
+                    'aria-label': `Toggle sort direction. Currently ${getDirectionLabel()}`,
+                    title: `Toggle sort direction. Currently ${getDirectionLabel()}`
+                },
+                    h('span', { className: 'direction-icon' }, 
+                        App.text(getDirectionIcon())
+                    ),
+                    h('span', { className: 'direction-label' }, 
+                        App.text(getDirectionLabel())
                     )
                 )
             )
@@ -491,30 +600,52 @@
     // Helper Functions
 
     /**
-     * Calculate page range for pagination
+     * Calculate page range for pagination with improved edge case handling
      */
     function calculatePageRange(current, total, delta = 2) {
+        // Handle edge cases
+        if (!current || !total || total <= 0 || current <= 0) {
+            return [1];
+        }
+        
+        // Ensure current is within bounds
+        current = Math.max(1, Math.min(current, total));
+        
+        // If only one page, return it
+        if (total === 1) {
+            return [1];
+        }
+        
         const range = [];
         const rangeWithDots = [];
         let l;
 
+        // Always include first page
         range.push(1);
 
-        if (total <= 1) return range;
-
+        // Add pages around current page within delta
         for (let i = current - delta; i <= current + delta; i++) {
-            if (i < total && i > 1) {
+            if (i > 1 && i < total) {
                 range.push(i);
             }
         }
         
-        range.push(total);
+        // Always include last page if more than 1 page
+        if (total > 1) {
+            range.push(total);
+        }
 
-        range.forEach((i) => {
+        // Remove duplicates and sort
+        const uniqueRange = [...new Set(range)].sort((a, b) => a - b);
+
+        // Add ellipsis where there are gaps
+        uniqueRange.forEach((i) => {
             if (l) {
                 if (i - l === 2) {
+                    // Only one page missing, add it directly
                     rangeWithDots.push(l + 1);
-                } else if (i - l !== 1) {
+                } else if (i - l > 2) {
+                    // Multiple pages missing, add ellipsis
                     rangeWithDots.push('...');
                 }
             }

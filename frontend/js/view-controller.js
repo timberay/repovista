@@ -267,7 +267,7 @@
          * Render repositories grid
          */
         _renderRepositories(state) {
-            const { repositories = [], loading, error, expandedRepositories = new Set(), tags = new Map() } = state;
+            const { repositories = [], loading, error, expandedRepositories = new Set(), tags = new Map(), sortBy = 'name-asc' } = state;
 
             if (loading) {
                 return; // Loading is handled separately
@@ -287,8 +287,19 @@
                 return;
             }
 
+            // Apply client-side sorting if SortUtils is available
+            let sortedRepositories = repositories;
+            if (App.SortUtils && sortBy) {
+                try {
+                    sortedRepositories = App.SortUtils.sortRepositories(repositories, sortBy);
+                } catch (error) {
+                    console.warn('Error sorting repositories:', error);
+                    sortedRepositories = repositories; // Fallback to original order
+                }
+            }
+
             const repositoryCards = h('div', { className: 'repository-grid' },
-                ...repositories.map(repository => {
+                ...sortedRepositories.map(repository => {
                     const isExpanded = expandedRepositories.has(repository.name);
                     const repositoryTags = tags.get(repository.name) || [];
 

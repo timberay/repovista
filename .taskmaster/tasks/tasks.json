@@ -575,7 +575,7 @@
         "id": 11,
         "title": "Implement sorting functionality",
         "description": "Add sorting controls for repositories and tags by name, date, and size",
-        "status": "pending",
+        "status": "done",
         "priority": "medium",
         "details": "Create sort dropdown controls. Implement sort logic for multiple fields. Add ascending/descending toggle. Maintain sort state in URL parameters. Update UI to reflect current sort.",
         "testStrategy": "Test all sort combinations, verify sort persistence, check sort direction toggle, validate with edge cases",
@@ -589,7 +589,7 @@
             "description": "저장소와 태그를 위한 정렬 드롭다운 및 방향 토글 버튼 UI 구현",
             "dependencies": [],
             "details": "HTML에 정렬 선택 드롭다운 추가 (이름/날짜/크기 옵션). 오름차순/내림차순 토글 버튼 구현. 현재 정렬 상태를 시각적으로 표시. 기존 검색/필터 UI와 일관된 스타일 적용.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -600,7 +600,7 @@
               "11.1"
             ],
             "details": "저장소 배열 정렬 함수 작성 (이름: 알파벳순, 날짜: 타임스탬프 기준, 크기: 바이트 단위). 태그 배열 정렬 함수 구현. null/undefined 값 처리. 대소문자 구분 없는 문자열 비교 구현.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -611,7 +611,7 @@
               "11.2"
             ],
             "details": "토글 버튼 클릭 이벤트 핸들러 구현. 현재 정렬 방향 상태 관리. 정렬 함수에 방향 파라미터 적용. 아이콘이나 텍스트로 현재 방향 표시.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -622,7 +622,7 @@
               "11.3"
             ],
             "details": "URLSearchParams API 사용하여 sort 및 direction 파라미터 관리. 정렬 변경 시 URL 업데이트 (history.pushState 사용). 페이지 로드 시 URL에서 정렬 상태 복원. 기존 검색/필터 파라미터와 함께 동작하도록 구현.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           },
           {
@@ -633,7 +633,7 @@
               "11.4"
             ],
             "details": "정렬 변경 시 저장소/태그 목록 재렌더링. 정렬 컨트롤 UI 상태 업데이트. 검색/필터와 정렬 기능 통합 동작 확인. 엣지 케이스 테스트 (빈 목록, 단일 항목, 동일한 값).",
-            "status": "pending",
+            "status": "done",
             "testStrategy": ""
           }
         ]
@@ -641,80 +641,75 @@
       {
         "id": 12,
         "title": "Create pagination controls",
-        "description": "Build pagination UI with page size options and navigation controls",
-        "status": "pending",
-        "priority": "medium",
-        "details": "Create pagination component with page numbers. Add page size selector (20/50/100). Implement previous/next navigation. Show current page and total pages. Update URL with pagination state.",
-        "testStrategy": "Test page navigation, verify page size changes, check boundary conditions, test URL state persistence",
+        "description": "기존 페이지네이션 컴포넌트를 수정하고 누락된 기능들을 구현하여 완전한 페이지네이션 시스템을 구축",
+        "status": "done",
         "dependencies": [
           9
         ],
+        "priority": "medium",
+        "details": "components.js에 기본 페이지네이션 컴포넌트가 존재하지만 여러 문제점과 누락된 기능들이 있음. CSS 클래스 이름 불일치 문제 해결(.page-button → .pagination-button), 누락된 CSS 스타일 추가, 페이지 크기 옵션 수정(10/20/50/100 → 20/50/100), URL 상태 관리 구현, 접근성 기능 강화, localStorage를 통한 페이지 크기 저장 기능 추가 필요.",
+        "testStrategy": "CSS 클래스 이름 수정 후 스타일 적용 확인, URL 파라미터 변경 시 페이지네이션 상태 복원 테스트, localStorage 저장/복원 테스트, 모든 ARIA 속성 검증, 경계 조건에서의 버튼 비활성화 테스트",
         "subtasks": [
           {
             "id": 1,
-            "title": "페이지네이션 UI 컴포넌트 생성",
-            "description": "페이지 번호 버튼, 이전/다음 버튼, 현재 페이지 표시를 포함한 기본 페이지네이션 UI 컴포넌트를 구현합니다",
+            "title": "CSS 클래스 이름 불일치 문제 수정",
+            "description": "components.js의 .page-button 클래스를 CSS에 정의된 .pagination-button으로 변경하고 관련 스타일을 적용합니다",
+            "status": "done",
             "dependencies": [],
-            "details": "HTML 구조에 정의된 페이지네이션 섹션을 JavaScript로 동적 생성하는 컴포넌트를 만듭니다. 페이지 번호 버튼 그룹, 이전/다음/처음/마지막 네비게이션 버튼, 현재 페이지와 전체 페이지 수 표시를 포함합니다. CSS 클래스를 활용하여 활성/비활성 상태를 시각적으로 구분합니다",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "현재 JavaScript 코드에서 사용하는 .page-button 클래스를 styles.css에 정의된 .pagination-button 클래스로 변경합니다. 또한 누락된 .pagination-controls와 .page-size-selector CSS 클래스를 추가하여 페이지네이션 UI가 올바르게 표시되도록 합니다",
+            "testStrategy": "클래스 이름 변경 후 페이지네이션 버튼들이 올바른 스타일로 표시되는지 확인"
           },
           {
             "id": 2,
-            "title": "페이지 네비게이션 로직 구현",
-            "description": "페이지 이동을 위한 이벤트 핸들러와 페이지 변경 시 데이터 재조회 로직을 구현합니다",
-            "dependencies": [
-              "12.1"
-            ],
-            "details": "페이지 번호 클릭, 이전/다음 버튼 클릭 시 현재 페이지를 업데이트하고 API를 호출하여 해당 페이지의 데이터를 가져오는 로직을 구현합니다. 이벤트 위임을 사용하여 동적으로 생성된 페이지 버튼들의 클릭 이벤트를 효율적으로 처리합니다",
-            "status": "pending",
-            "testStrategy": ""
+            "title": "페이지 크기 옵션 수정",
+            "description": "현재 10/20/50/100 옵션을 요구사항에 맞게 20/50/100으로 수정합니다",
+            "status": "done",
+            "dependencies": [],
+            "details": "components.js의 페이지 크기 선택기 옵션을 10/20/50/100에서 20/50/100으로 변경합니다. 기본값을 20으로 설정하고, HTML의 select 요소와 JavaScript 로직이 일치하도록 업데이트합니다",
+            "testStrategy": "페이지 크기 드롭다운에 20/50/100 옵션만 표시되는지 확인, 각 옵션 선택 시 올바른 수의 항목이 표시되는지 테스트"
           },
           {
             "id": 3,
-            "title": "페이지 크기 선택기 기능 구현",
-            "description": "페이지당 표시 항목 수를 변경할 수 있는 드롭다운 선택기의 기능을 구현합니다",
+            "title": "URL 상태 관리 구현",
+            "description": "페이지네이션 상태를 URL 쿼리 파라미터에 반영하고 브라우저 히스토리를 관리합니다",
+            "status": "done",
             "dependencies": [],
-            "details": "HTML에 정의된 페이지 크기 선택기(20/50/100)의 변경 이벤트를 처리합니다. 선택된 값에 따라 API 요청 파라미터를 업데이트하고, 페이지를 1로 리셋한 후 데이터를 다시 조회합니다. 선택된 페이지 크기는 로컬 스토리지에 저장하여 사용자 선호도를 기억합니다",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "현재 페이지와 페이지 크기를 URL 쿼리 파라미터(예: ?page=2&size=50)로 업데이트합니다. pushState API를 사용하여 브라우저 뒤로가기/앞으로가기 기능을 지원하고, 페이지 로드 시 URL에서 초기 상태를 복원합니다. URLSearchParams API를 활용하여 쿼리 파라미터를 효율적으로 관리합니다",
+            "testStrategy": "페이지 이동 시 URL 업데이트 확인, 브라우저 뒤로가기/앞으로가기 시 상태 복원 테스트, URL 직접 입력 시 해당 페이지 로드 확인"
           },
           {
             "id": 4,
-            "title": "경계 조건 처리 로직 구현",
-            "description": "첫 페이지와 마지막 페이지에서의 버튼 비활성화 및 예외 상황 처리를 구현합니다",
+            "title": "localStorage를 통한 페이지 크기 저장",
+            "description": "사용자가 선택한 페이지 크기를 localStorage에 저장하여 다음 방문 시에도 유지합니다",
+            "status": "done",
             "dependencies": [
-              "12.1",
-              "12.2"
+              2
             ],
-            "details": "현재 페이지가 1일 때 이전/처음 버튼을 비활성화하고, 마지막 페이지일 때 다음/마지막 버튼을 비활성화합니다. 전체 결과가 없을 때 페이지네이션을 숨기고, 잘못된 페이지 번호 접근 시 첫 페이지로 리다이렉트합니다. 페이지 범위를 벗어난 입력에 대한 검증도 포함합니다",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "페이지 크기 변경 시 선택된 값을 localStorage에 저장합니다. 페이지 로드 시 localStorage에서 저장된 값을 읽어와 기본값으로 설정합니다. localStorage가 지원되지 않는 경우를 대비한 폴백 처리도 포함합니다",
+            "testStrategy": "페이지 크기 변경 후 새로고침 시 설정 유지 확인, localStorage 삭제 후 기본값 복원 테스트"
           },
           {
             "id": 5,
-            "title": "URL 상태 관리 구현",
-            "description": "페이지네이션 상태를 URL 쿼리 파라미터에 반영하고 브라우저 히스토리를 관리합니다",
+            "title": "접근성 기능 강화",
+            "description": "부분적으로 구현된 접근성 기능을 완성하고 누락된 ARIA 속성을 추가합니다",
+            "status": "done",
             "dependencies": [
-              "12.2",
-              "12.3"
+              1
             ],
-            "details": "현재 페이지와 페이지 크기를 URL 쿼리 파라미터(예: ?page=2&size=50)로 업데이트합니다. pushState API를 사용하여 브라우저 뒤로가기/앞으로가기 기능을 지원하고, 페이지 로드 시 URL에서 초기 상태를 복원합니다. URLSearchParams API를 활용하여 쿼리 파라미터를 효율적으로 관리합니다",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "현재 일부 구현된 접근성 기능을 완성합니다. aria-current='page'로 현재 페이지 표시, aria-disabled로 비활성화된 버튼 표시, role='navigation'과 aria-label='Pagination Navigation' 추가. 페이지 변경 시 aria-live 영역을 통해 스크린 리더에 알림을 제공합니다",
+            "testStrategy": "모든 ARIA 속성이 올바르게 설정되었는지 확인, 스크린 리더로 네비게이션 테스트, 키보드만으로 페이지네이션 조작 가능한지 확인"
           },
           {
             "id": 6,
-            "title": "접근성 기능 구현",
-            "description": "키보드 네비게이션과 스크린 리더 지원을 위한 ARIA 속성을 추가합니다",
+            "title": "경계 조건 처리 개선",
+            "description": "기본적으로 구현된 경계 조건 처리를 개선하고 엣지 케이스를 처리합니다",
+            "status": "done",
             "dependencies": [
-              "12.1",
-              "12.2",
-              "12.4"
+              1,
+              3
             ],
-            "details": "페이지네이션 컴포넌트에 적절한 ARIA 레이블과 역할을 추가합니다. aria-current로 현재 페이지를 표시하고, aria-label로 각 버튼의 목적을 명확히 합니다. 키보드로 페이지 네비게이션이 가능하도록 탭 순서를 관리하고, 포커스 상태를 시각적으로 표시합니다. 페이지 변경 시 스크린 리더에게 알림을 제공합니다",
-            "status": "pending",
-            "testStrategy": ""
+            "details": "현재 기본 구현된 경계 조건 처리를 개선합니다. 첫 페이지에서 이전/처음 버튼 비활성화, 마지막 페이지에서 다음/마지막 버튼 비활성화를 더 명확하게 처리. 전체 결과가 없을 때 페이지네이션 숨김 처리, 잘못된 페이지 번호 URL 접근 시 첫 페이지로 리다이렉트, 음수나 너무 큰 페이지 번호 처리 로직 추가",
+            "testStrategy": "첫 페이지와 마지막 페이지에서 버튼 상태 확인, 결과가 없을 때 UI 확인, 잘못된 URL 파라미터 처리 테스트"
           }
         ]
       },
@@ -990,7 +985,7 @@
       "lastUpdated": "2025-01-07T10:00:00Z",
       "version": "1.0.0",
       "created": "2025-08-07T11:37:59.167Z",
-      "updated": "2025-08-09T00:55:24.523Z"
+      "updated": "2025-08-09T01:24:16.192Z"
     }
   }
 }

@@ -195,6 +195,188 @@ code {
   margin-bottom: var(--spacing-lg);
 }
 
+/* Sort Controls */
+.sort-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.sort-label {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.sort-icon {
+  font-size: var(--font-size-lg);
+}
+
+.sort-controls-group {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.sort-fields {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.sort-field {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.sort-field:hover {
+  border-color: var(--border-hover);
+  background-color: var(--surface-color);
+}
+
+.sort-field:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sort-field.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.field-icon {
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+.field-label {
+  font-size: var(--font-size-sm);
+}
+
+.sort-direction-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--accent-color);
+  color: white;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+  position: relative;
+}
+
+.sort-direction-toggle:hover {
+  background-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+
+.sort-direction-toggle:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sort-direction-toggle:active {
+  transform: translateY(0);
+}
+
+.direction-icon {
+  font-size: var(--font-size-base);
+  transition: transform var(--transition-fast);
+}
+
+.direction-label {
+  font-size: var(--font-size-sm);
+}
+
+/* Responsive behavior for sort controls */
+@media (max-width: 768px) {
+  .sort-controls-group {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+  
+  .sort-fields {
+    justify-content: center;
+  }
+  
+  .sort-direction-toggle {
+    justify-content: center;
+  }
+}
+
+/* Legacy support for old sort options class */
+.sort-options {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.sort-option {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  padding: var(--spacing-sm) var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-decoration: none;
+}
+
+.sort-option:hover {
+  border-color: var(--border-hover);
+  background-color: var(--surface-color);
+}
+
+.sort-option:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+.sort-option.active {
+  background-color: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.option-icon {
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+.option-label {
+  font-size: var(--font-size-sm);
+}
+
 /* Main Content */
 .main-content {
   width: 100%;
@@ -621,6 +803,114 @@ code {
   border-color: var(--primary-color);
 }
 
+/* Pagination controls layout */
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  flex-wrap: wrap;
+}
+
+.page-numbers {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+}
+
+.page-ellipsis {
+  padding: var(--spacing-sm);
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+/* Page size selector */
+.page-size-selector {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-sm);
+  margin-left: auto;
+}
+
+.page-size-selector label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.page-size-selector select {
+  padding: var(--spacing-xs) var(--spacing-sm);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--surface-elevated);
+  color: var(--text-primary);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  min-width: 4rem;
+}
+
+.page-size-selector select:hover {
+  border-color: var(--border-hover);
+}
+
+.page-size-selector select:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  border-color: var(--primary-color);
+}
+
+/* Enhanced focus styles for accessibility */
+.pagination-button:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.pagination-button:focus:not(:focus-visible) {
+  outline: none;
+  box-shadow: none;
+}
+
+.pagination-button:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+/* Ensure disabled buttons are clearly indicated */
+.pagination-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: var(--surface-color);
+  color: var(--text-muted);
+}
+
+.pagination-button[aria-current="page"] {
+  font-weight: var(--font-weight-semibold);
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .pagination-button {
+    border-width: 2px;
+  }
+  
+  .pagination-button.active {
+    border-width: 3px;
+  }
+  
+  .pagination-button:focus {
+    outline-width: 3px;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+  .pagination-button {
+    transition: none;
+  }
+}
+
 /* ===========================
    Footer
    ========================== */
@@ -731,6 +1021,48 @@ code {
   
   .pagination-info {
     order: -1;
+  }
+
+  /* Sort controls mobile adjustments */
+  .sort-controls {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--spacing-sm);
+  }
+  
+  .sort-label {
+    justify-content: center;
+  }
+  
+  .sort-controls-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .sort-fields {
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  .sort-field {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+  
+  .sort-direction-toggle {
+    justify-content: center;
+    margin-top: var(--spacing-xs);
+  }
+  
+  .field-label,
+  .direction-label {
+    display: none;
+  }
+  
+  .field-icon,
+  .direction-icon {
+    font-size: var(--font-size-lg);
   }
 }
 
