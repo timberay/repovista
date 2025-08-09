@@ -1,126 +1,122 @@
 # RepoVista - Docker Registry Web UI
 
-RepoVista는 Docker Registry를 위한 현대적이고 직관적인 웹 인터페이스입니다. 저장소와 태그를 쉽게 탐색하고 관리할 수 있습니다.
+RepoVista is a modern and intuitive web interface for Docker Registry, providing developers with an easy way to browse and select Docker images for deployment.
 
-## 🚀 주요 기능
+## 🚀 Key Features
 
-### 📦 저장소 관리
-- Docker Registry의 모든 저장소 목록 조회
-- 저장소별 상세 정보 (태그 수, 크기, 마지막 업데이트)
-- 저장소 검색 및 필터링
-- 다양한 정렬 옵션 (이름, 태그 수, 업데이트 날짜)
+### 📦 Repository Management
+- View all repositories from Docker Registry
+- Display repository details (tag count, last updated)
+- Real-time search and filtering
+- Sorting options (name, tag count, update date)
 
-### 🏷️ 태그 관리
-- 저장소별 태그 목록 조회
-- 태그별 상세 정보 (크기, 아키텍처, OS)
-- 태그 검색 및 정렬
-- Pull 명령어 자동 생성
+### 🏷️ Tag Management
+- List all tags for each repository
+- View tag details (size, digest, created date)
+- Copy-to-clipboard pull commands
+- Formatted dates and sizes for better readability
 
-### 🔍 고급 검색
-- 실시간 검색 (디바운싱 적용)
-- 태그 기반 필터링
-- 검색 제안 기능
+### 🔍 Search & Filter
+- Real-time repository search
+- Sort by name or date (ascending/descending)
+- Pagination controls (20/50/100 items per page)
 
-### 📱 반응형 디자인
-- 모바일, 태블릿, 데스크톱 지원
-- 다크 테마 지원
-- 접근성 고려
+### 📱 User Interface
+- Clean, light theme design
+- Grid layout for repository cards
+- Accordion-style tag expansion
+- Loading states and error messages
+- Desktop-optimized (Chrome browser support)
 
-### ⚡ 성능 최적화
-- 캐싱 시스템
-- 페이지네이션
-- 지연 로딩
-- ETag 지원
-
-## 🏗️ 아키텍처
+## 🏗️ Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
 │   Frontend      │    │   Backend       │    │   Docker        │
-│   (React/Vue)   │◄──►│   (FastAPI)     │◄──►│   Registry      │
+│   (Pure JS)     │◄──►│   (FastAPI)     │◄──►│   Registry      │
 │                 │    │                 │    │                 │
-│ - 저장소 목록    │    │ - API 엔드포인트 │    │ - 이미지 저장소  │
-│ - 태그 관리      │    │ - 캐싱 시스템   │    │ - 태그 관리     │
-│ - 검색 기능      │    │ - 인증 처리     │    │ - 메타데이터    │
-│ - UI 컴포넌트    │    │ - 에러 핸들링   │    │                 │
+│ - Repository    │    │ - REST API      │    │ - Image Store   │
+│   List          │    │ - Registry      │    │ - Tag Manager   │
+│ - Tag Display   │    │   Client        │    │ - Metadata      │
+│ - Search UI     │    │ - CORS Config   │    │                 │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
-## 🛠️ 기술 스택
+## 🛠️ Technology Stack
 
 ### Frontend
-- **Vanilla JavaScript** - 모던 ES6+ 문법
-- **CSS3** - CSS 변수, Flexbox, Grid
-- **HTML5** - 시맨틱 마크업
-- **모듈화된 아키텍처** - 컴포넌트 기반 구조
+- **Pure JavaScript** (ES6+) - No frameworks
+- **HTML5 & CSS3** - Modern web standards
+- **Fetch API** - HTTP communication
+- **Modular Architecture** - Clean separation of concerns
 
 ### Backend
-- **FastAPI** - 고성능 Python 웹 프레임워크
-- **Pydantic** - 데이터 검증
-- **aiohttp** - 비동기 HTTP 클라이언트
-- **Redis** - 캐싱 시스템
+- **FastAPI** - High-performance Python web framework
+- **Pydantic** - Data validation
+- **httpx** - Async HTTP client
+- **Python 3.8+** - Modern Python features
 
 ### Infrastructure
-- **Docker** - 컨테이너화
-- **Nginx** - 리버스 프록시
-- **Docker Compose** - 오케스트레이션
+- **Docker** - Containerization
+- **Nginx** - Static file serving
+- **Docker Compose** - Multi-container orchestration
 
-## 📦 설치 및 실행
+## 📦 Installation & Setup
 
-### 1. 저장소 클론
+### 1. Clone Repository
 ```bash
 git clone https://github.com/your-username/repovista.git
 cd repovista
 ```
 
-### 2. 환경 변수 설정
+### 2. Environment Configuration
 ```bash
-cp env.example .env
-# .env 파일을 편집하여 실제 값으로 수정
+cp .env.example .env
+# Edit .env file with your Docker Registry settings
 ```
 
-### 3. Docker Compose로 실행
+### 3. Run with Docker Compose
 ```bash
 docker-compose up -d
 ```
 
-### 4. 접속
-- Frontend: http://localhost
+### 4. Access the Application
+- Frontend UI: http://localhost
 - Backend API: http://localhost:8000
-- API 문서: http://localhost:8000/api/docs
+- API Documentation: http://localhost:8000/docs
 
-## ⚙️ 설정
+## ⚙️ Configuration
 
-### 환경 변수
+### Environment Variables
 
-| 변수명 | 설명 | 기본값 |
-|--------|------|--------|
+| Variable | Description | Default |
+|----------|-------------|---------|
 | `REGISTRY_URL` | Docker Registry URL | `http://localhost:5000` |
-| `REGISTRY_USERNAME` | Registry 사용자명 | - |
-| `REGISTRY_PASSWORD` | Registry 비밀번호 | - |
-| `API_PORT` | 백엔드 API 포트 | `8000` |
-| `FRONTEND_PORT` | 프론트엔드 포트 | `80` |
-| `CORS_ORIGINS` | CORS 허용 도메인 | `http://localhost` |
+| `REGISTRY_USERNAME` | Registry username (if auth required) | - |
+| `REGISTRY_PASSWORD` | Registry password (if auth required) | - |
+| `API_PORT` | Backend API port | `8000` |
+| `FRONTEND_PORT` | Frontend port | `80` |
+| `CORS_ORIGINS` | Allowed CORS origins | `http://localhost` |
 
-### Docker Registry 설정
+### Docker Registry Setup
 
-#### 로컬 Registry 실행
+#### Running Local Registry
 ```bash
 docker run -d -p 5000:5000 --name registry registry:2
 ```
 
-#### 인증이 필요한 Registry
+#### Authenticated Registry
 ```bash
-# .env 파일에 인증 정보 추가
+# Add credentials to .env file
 REGISTRY_USERNAME=your-username
 REGISTRY_PASSWORD=your-password
 ```
 
-## 🔧 개발
+## 🔧 Development
 
-### 로컬 개발 환경
+### Local Development Environment
 
-#### 백엔드 개발
+#### Backend Development
 ```bash
 cd backend
 python -m venv venv
@@ -129,45 +125,42 @@ pip install -r requirements.txt
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-#### 프론트엔드 개발
+#### Frontend Development
 ```bash
 cd frontend
-# 정적 파일 서버 실행 (예: Python)
+# Serve static files (using Python's built-in server)
 python -m http.server 3000
 ```
 
-### 테스트 실행
+### Running Tests
 ```bash
-# 통합 테스트
+# Integration tests
 node test-integration.js
 
-# 백엔드 테스트
+# Backend tests
 cd backend
-pytest
+pytest tests/
 
-# 프론트엔드 테스트
-# 브라우저에서 수동 테스트 또는 Playwright 사용
+# Frontend tests
+# Open test-console.html in browser for manual testing
 ```
 
-## 📚 API 문서
+## 📚 API Documentation
 
-### 주요 엔드포인트
+### Main Endpoints
 
-#### 저장소 관련
-- `GET /api/repositories/` - 저장소 목록 조회
-- `GET /api/repositories/{name}` - 저장소 상세 정보
-- `GET /api/repositories/{name}/tags` - 저장소 태그 목록
+#### Repository Operations
+- `GET /api/repositories` - List all repositories
+- `GET /api/repositories/{name}/tags` - List tags for a repository
 
-#### 태그 관련
-- `GET /api/repositories/{name}/tags/{tag}` - 태그 상세 정보
+#### Search & Filtering
+- `GET /api/repositories?search={query}` - Search repositories
+- `GET /api/repositories?sort_by={field}&sort_order={asc|desc}` - Sort results
+- `GET /api/repositories?page={n}&page_size={20|50|100}` - Pagination
 
-#### 검색 및 정렬
-- `GET /api/repositories/?search={query}` - 저장소 검색
-- `GET /api/repositories/?sort_by={field}&sort_order={order}` - 정렬
+### Response Format
 
-### 응답 형식
-
-#### 저장소 목록
+#### Repository List
 ```json
 {
   "repositories": [
@@ -175,7 +168,7 @@ pytest
       "name": "nginx",
       "tag_count": 15,
       "last_updated": "2023-12-01T12:00:00Z",
-      "size_bytes": 142857600
+      "last_updated_formatted": "2 days ago"
     }
   ],
   "pagination": {
@@ -189,7 +182,7 @@ pytest
 }
 ```
 
-#### 태그 목록
+#### Tag List
 ```json
 {
   "tags": [
@@ -201,8 +194,6 @@ pytest
       "size_formatted": "136.2 MB",
       "created": "2023-12-01T12:00:00Z",
       "created_formatted": "2 days ago",
-      "architecture": "amd64",
-      "os": "linux",
       "pull_command": "docker pull localhost:5000/nginx:latest"
     }
   ],
@@ -213,99 +204,96 @@ pytest
 }
 ```
 
-## 🎨 UI 컴포넌트
+## 🎨 UI Components
 
-### 주요 컴포넌트
-- **RepositoryCard** - 저장소 정보 카드
-- **TagList** - 태그 목록
-- **SearchBar** - 검색 입력
-- **Pagination** - 페이지네이션
-- **Modal** - 모달 다이얼로그
-- **Spinner** - 로딩 스피너
+### Main Components
+- **Repository Cards** - Grid layout for repository display
+- **Tag Accordion** - Expandable tag details
+- **Search Bar** - Real-time search input
+- **Pagination Controls** - Page size and navigation
+- **Loading Spinner** - Visual feedback during data fetch
+- **Error Messages** - User-friendly error display
 
-### 스타일 시스템
-- CSS 변수 기반 테마 시스템
-- 반응형 디자인
-- 접근성 지원
-- 다크 테마
+### Styling
+- Clean, modern design with light theme
+- CSS Grid for responsive layout
+- CSS variables for consistent theming
+- Smooth transitions and animations
 
-## 🔍 사용법
+## 🔍 Usage
 
-### 1. 저장소 탐색
-1. 메인 페이지에서 저장소 목록 확인
-2. 검색창에 저장소 이름 입력하여 필터링
-3. 정렬 드롭다운으로 정렬 기준 변경
+### 1. Browse Repositories
+1. View all repositories on the main page
+2. Use the search bar to filter repositories
+3. Sort by name or date using sort controls
 
-### 2. 태그 관리
-1. 저장소 카드 클릭하여 상세 정보 확인
-2. 태그 목록에서 특정 태그 선택
-3. Pull 명령어 복사하여 사용
+### 2. View Tags
+1. Click on a repository card to expand tag details
+2. View tag information including size and creation date
+3. Copy pull commands with one click
 
-### 3. 검색 및 필터링
-1. 검색창에 키워드 입력 (실시간 검색)
-2. 사이드바의 태그 클릭하여 태그별 필터링
-3. 정렬 옵션으로 결과 정렬
+### 3. Search and Filter
+1. Type in the search bar for real-time filtering
+2. Use pagination controls to navigate results
+3. Sort results by name or date
 
-## 🚀 성능 최적화
+## 🚀 Performance Optimization
 
-### 캐싱 전략
-- Redis를 사용한 API 응답 캐싱
-- ETag를 통한 조건부 요청
-- 정적 자산 캐싱
+### Frontend Optimization
+- Debounced search input (300ms delay)
+- Efficient DOM updates
+- Minimized re-renders
+- Optimized event delegation
 
-### 프론트엔드 최적화
-- 디바운싱을 통한 검색 최적화
-- 지연 로딩
-- 이미지 최적화
+### Backend Optimization
+- Async/await for non-blocking operations
+- Connection pooling for Registry API
+- Error handling and retry logic
+- CORS configuration for security
 
-### 백엔드 최적화
-- 비동기 처리
-- 연결 풀링
-- 에러 핸들링
+## 🐛 Troubleshooting
 
-## 🐛 문제 해결
+### Common Issues
 
-### 일반적인 문제
-
-#### 1. Registry 연결 실패
+#### 1. Registry Connection Failed
 ```bash
-# Registry 상태 확인
+# Check Registry status
 curl http://localhost:5000/v2/
 
-# 인증 정보 확인
+# Verify credentials if authentication is required
 docker login localhost:5000
 ```
 
-#### 2. CORS 오류
+#### 2. CORS Errors
 ```bash
-# .env 파일에서 CORS_ORIGINS 설정 확인
+# Check CORS_ORIGINS in .env file
 CORS_ORIGINS=http://localhost,http://localhost:3000
 ```
 
-#### 3. 포트 충돌
+#### 3. Port Conflicts
 ```bash
-# 사용 중인 포트 확인
+# Check ports in use
 netstat -tulpn | grep :80
 netstat -tulpn | grep :8000
 
-# 포트 변경
+# Change ports in .env
 API_PORT=8001
 FRONTEND_PORT=8080
 ```
 
-### 로그 확인
+### View Logs
 ```bash
-# 백엔드 로그
+# Backend logs
 docker-compose logs backend
 
-# 프론트엔드 로그
+# Frontend logs
 docker-compose logs frontend
 
-# 실시간 로그
+# Follow logs in real-time
 docker-compose logs -f
 ```
 
-## 🤝 기여하기
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -313,20 +301,20 @@ docker-compose logs -f
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📄 라이선스
+## 📄 License
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🙏 감사의 말
+## 🙏 Acknowledgments
 
-- [Docker Registry](https://docs.docker.com/registry/) - 이미지 저장소
-- [FastAPI](https://fastapi.tiangolo.com/) - 백엔드 프레임워크
-- [Nginx](https://nginx.org/) - 웹 서버
+- [Docker Registry](https://docs.docker.com/registry/) - Image storage backend
+- [FastAPI](https://fastapi.tiangolo.com/) - Backend framework
+- [Nginx](https://nginx.org/) - Web server
 
-## 📞 지원
+## 📞 Support
 
-문제가 있거나 질문이 있으시면 [Issues](https://github.com/your-username/repovista/issues)를 통해 문의해 주세요.
+For issues or questions, please open an issue on [GitHub Issues](https://github.com/your-username/repovista/issues).
 
 ---
 
-**RepoVista** - Docker Registry를 더 쉽게 관리하세요! 🐳
+**RepoVista** - Making Docker Registry management simple and intuitive! 🐳

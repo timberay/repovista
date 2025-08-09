@@ -7,18 +7,14 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 import logging
-import json
-
 from ..services.registry import RegistryClient, RegistryException
 from ..services.repository_service import RepositoryService, create_repository_service
-from ..services.cache import cache_service, etag_cache, cache_result
+from ..services.cache import cache_service, etag_cache
 from ..models.schemas import (
-    RepositoryInfo, PaginationInfo, PaginationRequest, 
+    PaginationRequest,
     PaginationResponse, SortRequest, SearchRequest
 )
-from ..utils.pagination import PaginationHelper, validate_pagination_params
-from ..utils.search import search_tracker
-from ..utils.sorting import get_sort_field_info
+from ..utils.pagination import validate_pagination_params
 from ..config import settings
 
 logger = logging.getLogger(__name__)

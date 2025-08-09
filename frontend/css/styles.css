@@ -1,5 +1,5 @@
 /**
- * RepoVista - 스타일시트
+ * RepoVista - Stylesheet
  */
 
 * {
@@ -250,16 +250,6 @@ body {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateX(-20px);
-    }
-    to {
-        opacity: 1;
-        transform: translateX(0);
-    }
-}
 
 @keyframes cardFadeInUp {
     from {
@@ -571,7 +561,7 @@ tr:hover {
     }
 }
 
-/* 반응형 디자인 */
+/* Responsive Design */
 @media (max-width: 768px) {
     body {
         padding: 10px;

@@ -66,3 +66,7 @@ logs
 # Task files
 # tasks.json
 # tasks/ 
+
+# Deployment artifacts (too large for GitHub)
+deploy/images/*.tar
+*.tar.gz

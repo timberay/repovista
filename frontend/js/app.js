@@ -114,7 +114,7 @@ const api = {
             const data = await response.json();
             return data;
         } catch (error) {
-            console.error('API 호출 실패:', error);
+            console.error('API call failed:', error);
             throw error;
         }
     },
@@ -122,7 +122,7 @@ const api = {
     async fetchTags(repositoryName) {
         try {
             if (!repositoryName) {
-                throw new Error('저장소 이름이 필요합니다.');
+                throw new Error('Repository name is required.');
             }
 
             const response = await fetch(`${API_BASE_URL}/repositories/${encodeURIComponent(repositoryName)}/tags?page_size=50`);
@@ -162,7 +162,7 @@ const ui = {
                 <div class="error">
                     <h3>An error occurred</h3>
                     <p>${utils.escapeHtml(message)}</p>
-                    <button onclick="loadRepositories()">다시 시도</button>
+                    <button onclick="loadRepositories()">Try Again</button>
                 </div>
             `;
         }
@@ -432,7 +432,7 @@ function copyPullCommand(repoName, tagName) {
             alert(`Pull command:\n${command}`);
         });
     } else {
-        alert(`Pull 명령어:\n${command}`);
+        alert(`Pull command:\n${command}`);
     }
 }
 
@@ -449,7 +449,7 @@ function copyImageId(imageId) {
             alert(`Image ID:\n${imageId}`);
         });
     } else {
-        alert(`이미지 ID:\n${imageId}`);
+        alert(`Image ID:\n${imageId}`);
     }
 }
 
@@ -520,7 +520,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         
     } catch (error) {
-        console.error('이벤트 리스너 설정 실패:', error);
+        console.error('Event listener setup failed:', error);
         ui.showError('An error occurred during page initialization.');
     }
 });
