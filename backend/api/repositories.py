@@ -109,11 +109,17 @@ async def get_registry_client() -> RegistryClient:
     Dependency injection for registry client
     
     Returns:
-        Configured RegistryClient instance
+        Configured RegistryClient instance (or mock in development mode)
     """
     from ..config import settings
+    from ..services.mock_registry import MockRegistryClient
     
-    # Convert empty strings to None for username/password
+    # Use mock data if configured or if registry URL is localhost and unavailable
+    if settings.use_mock_data:
+        logger.info("Using mock registry data (USE_MOCK_DATA=true)")
+        return MockRegistryClient()
+    
+    # Try to connect to real registry
     username = settings.registry_username if settings.registry_username else None
     password = settings.registry_password if settings.registry_password else None
     
@@ -124,6 +130,23 @@ async def get_registry_client() -> RegistryClient:
         timeout=30.0,
         max_retries=3
     )
+    
+    # Check if registry is available
+    try:
+        if await client.ping():
+            return client
+    except Exception as e:
+        logger.warning(f"Registry at {settings.registry_url} is not available: {e}")
+        
+        # Fallback to mock data for development
+        if "localhost" in settings.registry_url or "127.0.0.1" in settings.registry_url:
+            logger.info("Falling back to mock registry data for development")
+            await client.close()
+            return MockRegistryClient()
+        
+        # For production registries, raise the error
+        raise
+    
     return client
 
 
@@ -155,28 +178,24 @@ async def get_repository_service(
         503: {"description": "Registry unavailable", "model": ErrorResponse}
     },
     summary="List repositories",
-    description="Get a paginated list of repositories with optional search and sorting"
+    description="Get a paginated list of repositories with optional search"
 )
 async def list_repositories(
     request: Request,
     response: Response,
     search: Optional[str] = Query(None, description="Search term to filter repository names"),
-    sort_by: Optional[str] = Query("name", description="Field to sort by (name, tag_count, last_updated, relevance)"),
-    sort_order: Optional[str] = Query("asc", description="Sort order (asc, desc)"),
     page: int = Query(1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     include_metadata: bool = Query(False, description="Include repository metadata (tag count, last updated)"),
     repo_service: RepositoryService = Depends(get_repository_service)
 ) -> RepositoryListResponse:
     """
-    List repositories from Docker Registry with pagination, search, and sorting
+    List repositories from Docker Registry with pagination and search
     
     Args:
         request: FastAPI request object
         response: FastAPI response object
         search: Optional search term to filter repository names
-        sort_by: Field to sort by (name, tag_count, last_updated, relevance)
-        sort_order: Sort order (asc, desc)
         page: Page number (1-based)
         page_size: Number of items per page (1-100)
         include_metadata: Whether to fetch repository metadata
@@ -195,8 +214,6 @@ async def list_repositories(
         # Generate cache key
         cache_key_params = {
             "search": search,
-            "sort_by": sort_by,
-            "sort_order": sort_order,
             "page": page,
             "page_size": page_size,
             "include_metadata": include_metadata
@@ -226,10 +243,10 @@ async def list_repositories(
         
         # Create request objects
         search_req = SearchRequest(search=search)
-        sort_req = SortRequest(sort_by=sort_by, sort_order=sort_order)
+        sort_req = SortRequest(sort_by="name", sort_order="asc")  # Default sort
         pagination_req = PaginationRequest(page=page, page_size=page_size)
         
-        # Use repository service for enhanced search and sort
+        # Use repository service for enhanced search
         repo_data, pagination_response = await repo_service.search_and_list_repositories(
             search_req=search_req,
             sort_req=sort_req,
@@ -253,8 +270,10 @@ async def list_repositories(
             pagination=pagination_response
         )
         
-        # Cache the result
-        result_dict = result.dict()
+        # Cache the result - use json() then loads to properly serialize datetime objects
+        import json
+        result_json = result.json()
+        result_dict = json.loads(result_json)
         await cache_service.set(cache_key, result_dict, ttl=60 if include_metadata else 300)
         
         # Generate and set ETag
@@ -345,54 +364,6 @@ async def get_search_suggestions(
             }
         )
 
-
-@router.get(
-    "/sort/fields",
-    response_model=Dict[str, Any],
-    summary="Get available sort fields",
-    description="Get information about available sort fields and their properties"
-)
-async def get_sort_fields(
-    include_metadata: bool = Query(False, description="Include metadata-dependent sort fields"),
-    repo_service: RepositoryService = Depends(get_repository_service)
-) -> Dict[str, Any]:
-    """
-    Get available sort fields and their information
-    
-    Args:
-        include_metadata: Whether to include metadata-dependent fields
-        repo_service: Repository service (injected)
-        
-    Returns:
-        Dictionary with sort field information
-    """
-    try:
-        available_fields = repo_service.get_available_sort_fields(include_metadata)
-        field_info = get_sort_field_info()
-        
-        # Filter field info based on available fields
-        filtered_info = {
-            field: info for field, info in field_info.items()
-            if field in available_fields
-        }
-        
-        return {
-            "available_fields": available_fields,
-            "field_info": filtered_info,
-            "default_field": "name",
-            "default_order": "asc"
-        }
-        
-    except Exception as e:
-        logger.error(f"Error getting sort fields: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail={
-                "error": "SortFieldsError",
-                "message": "Failed to get sort fields information",
-                "details": {"original_error": str(e)}
-            }
-        )
 
 
 @router.get(

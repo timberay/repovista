@@ -1,266 +1,59 @@
-/**
- * RepoVista - 메인 애플리케이션
- * @version 1.0.0
- */
+// Global variables
+let currentPage = 1;
+let totalPages = 1;
+let repositories = [];
+let searchTerm = '';
+let isLoading = false;
+let registryUrl = 'localhost:5000'; // Default registry URL
 
-class RepoVistaApp {
-    constructor() {
-        this.config = {
-            apiBaseUrl: '/api',
-            debug: true
-        };
-        this.state = {
-            repositories: [],
-            tags: [],
-            loading: false,
-            error: null
-        };
-        this.init();
-    }
+// API configuration
+const API_BASE_URL = '/api';
 
-    async init() {
-        try {
-            console.log('RepoVista 애플리케이션 초기화 중...');
-            
-            // 이벤트 리스너 등록
-            this.setupEventListeners();
-            
-            // 초기 데이터 로드
-            await this.loadInitialData();
-            
-            // UI 렌더링
-            this.render();
-            
-            console.log('RepoVista 애플리케이션 초기화 완료');
-        } catch (error) {
-            console.error('애플리케이션 초기화 실패:', error);
-            this.handleError(error);
-        }
-    }
-
-    setupEventListeners() {
-        // 검색 이벤트
-        document.addEventListener('DOMContentLoaded', () => {
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                searchInput.addEventListener('input', this.debounce(this.handleSearch.bind(this), 300));
-            }
-
-            // 정렬 이벤트
-            const sortSelect = document.getElementById('sort-select');
-            if (sortSelect) {
-                sortSelect.addEventListener('change', this.handleSort.bind(this));
-            }
-
-            // 태그 필터 이벤트
-            const tagFilters = document.querySelectorAll('.tag-filter');
-            tagFilters.forEach(tag => {
-                tag.addEventListener('click', this.handleTagFilter.bind(this));
-            });
-        });
-    }
-
-    async loadInitialData() {
-        this.state.loading = true;
-        this.render();
-
-        try {
-            const [repositories, tags] = await Promise.all([
-                this.fetchRepositories(),
-                this.fetchTags()
-            ]);
-
-            this.state.repositories = repositories;
-            this.state.tags = tags;
-        } catch (error) {
-            this.state.error = error.message;
-        } finally {
-            this.state.loading = false;
-        }
-    }
-
-    async fetchRepositories() {
-        const response = await fetch(`${this.config.apiBaseUrl}/repositories`);
-        if (!response.ok) {
-            throw new Error('저장소 데이터를 불러올 수 없습니다.');
-        }
-        return await response.json();
-    }
-
-    async fetchTags() {
-        const response = await fetch(`${this.config.apiBaseUrl}/tags`);
-        if (!response.ok) {
-            throw new Error('태그 데이터를 불러올 수 없습니다.');
-        }
-        return await response.json();
-    }
-
-    handleSearch(event) {
-        const query = event.target.value.toLowerCase();
-        const filteredRepos = this.state.repositories.filter(repo => 
-            repo.name.toLowerCase().includes(query) ||
-            repo.description?.toLowerCase().includes(query)
-        );
-        this.renderRepositories(filteredRepos);
-    }
-
-    handleSort(event) {
-        const sortBy = event.target.value;
-        const sortedRepos = [...this.state.repositories].sort((a, b) => {
-            switch (sortBy) {
-                case 'name':
-                    return a.name.localeCompare(b.name);
-                case 'stars':
-                    return b.stars - a.stars;
-                case 'updated':
-                    return new Date(b.updated_at) - new Date(a.updated_at);
-                default:
-                    return 0;
-            }
-        });
-        this.renderRepositories(sortedRepos);
-    }
-
-    handleTagFilter(event) {
-        const selectedTag = event.target.dataset.tag;
-        const filteredRepos = this.state.repositories.filter(repo => 
-            repo.tags?.includes(selectedTag)
-        );
-        this.renderRepositories(filteredRepos);
-    }
-
-    render() {
-        if (this.state.loading) {
-            this.showLoading();
-            return;
-        }
-
-        if (this.state.error) {
-            this.showError(this.state.error);
-            return;
-        }
-
-        this.renderHeader();
-        this.renderSidebar();
-        this.renderMainContent();
-    }
-
-    renderHeader() {
-        const header = document.getElementById('header');
-        if (!header) return;
-
-        header.innerHTML = `
-            <div class="header-content">
-                <h1>RepoVista</h1>
-                <div class="search-container">
-                    <input type="text" id="search-input" placeholder="저장소 검색..." />
-                </div>
-                <div class="sort-container">
-                    <select id="sort-select">
-                        <option value="name">이름순</option>
-                        <option value="stars">별표순</option>
-                        <option value="updated">최신순</option>
-                    </select>
-                </div>
-            </div>
-        `;
-    }
-
-    renderSidebar() {
-        const sidebar = document.getElementById('sidebar');
-        if (!sidebar) return;
-
-        sidebar.innerHTML = `
-            <div class="sidebar-content">
-                <h3>태그</h3>
-                <div class="tag-list">
-                    ${this.state.tags.map(tag => `
-                        <span class="tag-filter" data-tag="${tag.name}">${tag.name}</span>
-                    `).join('')}
-                </div>
-            </div>
-        `;
-    }
-
-    renderMainContent() {
-        const main = document.getElementById('main');
-        if (!main) return;
-
-        main.innerHTML = `
-            <div class="content-header">
-                <h2>저장소 목록 (${this.state.repositories.length}개)</h2>
-            </div>
-            <div class="repository-grid" id="repository-grid">
-                ${this.state.repositories.map(repo => this.renderRepositoryCard(repo)).join('')}
-            </div>
-        `;
-    }
-
-    renderRepositories(repositories) {
-        const grid = document.getElementById('repository-grid');
-        if (!grid) return;
-
-        grid.innerHTML = repositories.map(repo => this.renderRepositoryCard(repo)).join('');
-    }
-
-    renderRepositoryCard(repo) {
-        return `
-            <div class="repository-card">
-                <div class="repo-header">
-                    <h3>${repo.name}</h3>
-                    <div class="repo-stats">
-                        <span class="stars">⭐ ${repo.stars || 0}</span>
-                        <span class="forks">🔀 ${repo.forks || 0}</span>
-                    </div>
-                </div>
-                <p class="repo-description">${repo.description || '설명 없음'}</p>
-                <div class="repo-tags">
-                    ${(repo.tags || []).map(tag => `<span class="tag">${tag}</span>`).join('')}
-                </div>
-                <div class="repo-footer">
-                    <span class="language">${repo.language || 'Unknown'}</span>
-                    <span class="updated">${this.formatDate(repo.updated_at)}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    showLoading() {
-        const main = document.getElementById('main');
-        if (!main) return;
-
-        main.innerHTML = `
-            <div class="loading">
-                <div class="spinner"></div>
-                <p>데이터를 불러오는 중...</p>
-            </div>
-        `;
-    }
-
-    showError(message) {
-        const main = document.getElementById('main');
-        if (!main) return;
-
-        main.innerHTML = `
-            <div class="error">
-                <h3>오류가 발생했습니다</h3>
-                <p>${message}</p>
-                <button onclick="location.reload()">다시 시도</button>
-            </div>
-        `;
-    }
-
-    handleError(error) {
-        console.error('애플리케이션 오류:', error);
-        this.state.error = error.message;
-        this.render();
-    }
+// Utility functions
+const utils = {
+    formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    },
 
     formatDate(dateString) {
-        if (!dateString) return '날짜 없음';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR');
-    }
+        if (!dateString) return 'No date';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'No date';
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            }) + ' ' + date.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit',
+                hour12: false
+            });
+        } catch (error) {
+            return 'No date';
+        }
+    },
+
+    showNotification(message, type = 'success') {
+        try {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 3000);
+        } catch (error) {
+            console.error('Failed to show notification:', error);
+        }
+    },
 
     debounce(func, wait) {
         let timeout;
@@ -272,10 +65,436 @@ class RepoVistaApp {
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
         };
+    },
+
+    escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+};
+
+// API functions
+const api = {
+    async fetchRegistryConfig() {
+        try {
+            const response = await fetch(`${API_BASE_URL}/repositories/config`);
+            if (response.ok) {
+                const config = await response.json();
+                if (config.registry_url) {
+                    // Extract hostname and port from registry URL
+                    const url = new URL(config.registry_url);
+                    registryUrl = url.host || url.hostname;
+                }
+            }
+        } catch (error) {
+            console.warn('Failed to fetch registry config, using default:', error);
+        }
+    },
+
+    async fetchRepositories(page = 1, search = '') {
+        try {
+            const params = new URLSearchParams({
+                page: page.toString(),
+                page_size: '20',
+                include_metadata: 'true'
+            });
+
+            if (search && search.trim()) {
+                params.append('search', search.trim());
+            }
+
+            const response = await fetch(`${API_BASE_URL}/repositories/?${params}`);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('API 호출 실패:', error);
+            throw error;
+        }
+    },
+
+    async fetchTags(repositoryName) {
+        try {
+            if (!repositoryName) {
+                throw new Error('저장소 이름이 필요합니다.');
+            }
+
+            const response = await fetch(`${API_BASE_URL}/repositories/${encodeURIComponent(repositoryName)}/tags?page_size=50`);
+            
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${response.statusText} - ${errorText}`);
+            }
+
+            const data = await response.json();
+            return data;
+        } catch (error) {
+            console.error('Failed to fetch tags:', error);
+            throw error;
+        }
+    }
+};
+
+// UI rendering functions
+const ui = {
+    showLoading() {
+        const repositoriesDiv = document.getElementById('repositories');
+        if (repositoriesDiv) {
+            repositoriesDiv.innerHTML = `
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Loading repositories...</p>
+                </div>
+            `;
+        }
+    },
+
+    showError(message) {
+        const repositoriesDiv = document.getElementById('repositories');
+        if (repositoriesDiv) {
+            repositoriesDiv.innerHTML = `
+                <div class="error">
+                    <h3>An error occurred</h3>
+                    <p>${utils.escapeHtml(message)}</p>
+                    <button onclick="loadRepositories()">다시 시도</button>
+                </div>
+            `;
+        }
+    },
+
+    renderRepositories(repos, pagination) {
+        const repositoriesDiv = document.getElementById('repositories');
+        if (!repositoriesDiv) return;
+        
+        if (!repos || repos.length === 0) {
+            repositoriesDiv.innerHTML = `
+                <div class="empty-state">
+                    <h3>No repositories found</h3>
+                    <p>${searchTerm ? 'Try changing your search criteria.' : 'No repositories in the registry.'}</p>
+                </div>
+            `;
+            return;
+        }
+
+        repositoriesDiv.innerHTML = repos.map(repo => this.renderRepositoryCard(repo)).join('');
+        
+        // Update pagination
+        this.renderPagination(pagination);
+    },
+
+    renderRepositoryCard(repo) {
+        if (!repo || !repo.name) return '';
+        
+        const sizeFormatted = repo.size_bytes ? utils.formatFileSize(repo.size_bytes) : 'Size unknown';
+        const lastUpdated = utils.formatDate(repo.last_updated);
+        const tagCount = repo.tag_count || 0;
+        
+        return `
+            <div class="repository-card" data-repo="${utils.escapeHtml(repo.name)}">
+                <div class="repo-header" onclick="toggleExpand(this)">
+                    <div class="repo-info">
+                        <div class="repo-name">
+                            <span>📦</span>
+                            <span>${utils.escapeHtml(repo.name)}</span>
+                            <span class="badge">${tagCount} tags</span>
+                        </div>
+                        <div class="repo-meta">
+                            <span>💾 Total size: ${sizeFormatted}</span>
+                            <span>📅 Last updated: ${lastUpdated}</span>
+                        </div>
+                    </div>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="tags-table">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        <p>Loading tags...</p>
+                    </div>
+                </div>
+            </div>
+        `;
+    },
+
+    renderTagsTable(repoName, tags) {
+        if (!tags || tags.length === 0) {
+            return `
+                <div class="empty-state">
+                    <h3>No tags found</h3>
+                    <p>This repository has no tags.</p>
+                </div>
+            `;
+        }
+
+        return `
+            <table>
+                <thead>
+                    <tr>
+                        <th>Tag</th>
+                        <th>Image ID</th>
+                        <th>Size</th>
+                        <th>Created</th>
+                        <th>Pull Command</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    ${tags.map(tag => {
+                        const tagName = tag.tag || 'N/A';
+                        const digest = tag.digest ? tag.digest.substring(0, 12) + '...' : 'N/A';
+                        const size = tag.size_formatted || utils.formatFileSize(tag.size_bytes) || 'N/A';
+                        const created = tag.created_formatted || utils.formatDate(tag.created) || 'N/A';
+                        const pullCommand = `docker pull ${registryUrl}/${repoName}:${tagName}`;
+                        
+                        return `
+                            <tr>
+                                <td class="tag-name">${utils.escapeHtml(tagName)}</td>
+                                <td class="image-id">
+                                    <span>${utils.escapeHtml(digest)}</span>
+                                    <button class="copy-btn-inline" onclick="copyImageId('${utils.escapeHtml(tag.digest || '')}')">
+                                        <i class="far fa-copy"></i>
+                                    </button>
+                                </td>
+                                <td>${utils.escapeHtml(size)}</td>
+                                <td>${utils.escapeHtml(created)}</td>
+                                <td class="pull-command">
+                                    <span class="command-text">${utils.escapeHtml(pullCommand)}</span>
+                                    <button class="copy-btn-inline" onclick="copyPullCommand('${utils.escapeHtml(repoName)}', '${utils.escapeHtml(tagName)}')">
+                                        <i class="far fa-copy"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        `;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    },
+
+    renderPagination(pagination) {
+        const paginationDiv = document.getElementById('pagination');
+        const pageNumbersDiv = document.getElementById('page-numbers');
+        
+        if (!paginationDiv || !pageNumbersDiv) return;
+        
+        if (!pagination || pagination.total_pages <= 1) {
+            paginationDiv.style.display = 'none';
+            return;
+        }
+
+        paginationDiv.style.display = 'flex';
+        
+        // Generate page numbers
+        let pageNumbers = '';
+        const startPage = Math.max(1, pagination.page - 2);
+        const endPage = Math.min(pagination.total_pages, pagination.page + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const activeClass = i === pagination.page ? 'active' : '';
+            pageNumbers += `<button class="page-btn ${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+        }
+
+        pageNumbersDiv.innerHTML = pageNumbers;
+
+        // Update prev/next button states
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        
+        if (prevBtn) prevBtn.disabled = pagination.page <= 1;
+        if (nextBtn) nextBtn.disabled = pagination.page >= pagination.total_pages;
+    }
+};
+
+// Main functions
+async function loadRepositories() {
+    if (isLoading) return;
+    
+    try {
+        isLoading = true;
+        ui.showLoading();
+        
+        const response = await api.fetchRepositories(currentPage, searchTerm);
+        
+        repositories = response.repositories || [];
+        totalPages = response.pagination?.total_pages || 1;
+        
+        ui.renderRepositories(repositories, response.pagination);
+        
+    } catch (error) {
+        console.error('Failed to load repositories:', error);
+        ui.showError(error.message || 'An unknown error occurred.');
+    } finally {
+        isLoading = false;
     }
 }
 
-// 애플리케이션 시작
-document.addEventListener('DOMContentLoaded', () => {
-    window.app = new RepoVistaApp();
+async function loadTags(repoName, cardElement) {
+    if (!repoName || !cardElement) return;
+    
+    try {
+        const response = await api.fetchTags(repoName);
+        const tagsTable = cardElement.querySelector('.tags-table');
+        if (tagsTable) {
+            tagsTable.innerHTML = ui.renderTagsTable(repoName, response.tags || []);
+        }
+        
+    } catch (error) {
+        console.error('Failed to load tags:', error);
+        const tagsTable = cardElement.querySelector('.tags-table');
+        if (tagsTable) {
+            tagsTable.innerHTML = `
+                <div class="error">
+                    <h3>Failed to load tags</h3>
+                    <p>${utils.escapeHtml(error.message || 'An unknown error occurred.')}</p>
+                </div>
+            `;
+        }
+    }
+}
+
+function toggleExpand(element) {
+    if (!element) return;
+    
+    const card = element.closest('.repository-card');
+    if (!card) return;
+    
+    const repoName = card.dataset.repo;
+    if (!repoName) return;
+    
+    if (card.classList.contains('expanded')) {
+        card.classList.remove('expanded');
+    } else {
+        card.classList.add('expanded');
+        
+        // Load tags only if not already loaded
+        const tagsTable = card.querySelector('.tags-table');
+        if (tagsTable && tagsTable.querySelector('.loading')) {
+            loadTags(repoName, card);
+        }
+    }
+}
+
+function goToPage(page) {
+    if (page < 1 || page > totalPages || isLoading) return;
+    currentPage = page;
+    loadRepositories();
+}
+
+function copyPullCommand(repoName, tagName) {
+    if (!repoName || !tagName) {
+        utils.showNotification('Repository name and tag are required.', 'error');
+        return;
+    }
+    
+    const command = `docker pull ${registryUrl}/${repoName}:${tagName}`;
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(command).then(() => {
+            utils.showNotification('Pull command copied to clipboard.');
+        }).catch(() => {
+            alert(`Pull command:\n${command}`);
+        });
+    } else {
+        alert(`Pull 명령어:\n${command}`);
+    }
+}
+
+function copyImageId(imageId) {
+    if (!imageId) {
+        utils.showNotification('No image ID available.', 'error');
+        return;
+    }
+    
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(imageId).then(() => {
+            utils.showNotification('Image ID copied to clipboard.');
+        }).catch(() => {
+            alert(`Image ID:\n${imageId}`);
+        });
+    } else {
+        alert(`이미지 ID:\n${imageId}`);
+    }
+}
+
+// Event listeners
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        // First fetch registry configuration
+        await api.fetchRegistryConfig();
+        
+        // Initial load
+        loadRepositories();
+
+        // Setup search events
+        const searchInput = document.getElementById('search-input');
+        const searchBtn = document.getElementById('search-btn');
+        const refreshBtn = document.getElementById('refresh-btn');
+        
+        // Refresh button click event
+        if (refreshBtn) {
+            refreshBtn.addEventListener('click', () => {
+                if (isLoading) return;
+                if (searchInput) {
+                    searchInput.value = '';
+                }
+                searchTerm = '';
+                currentPage = 1;
+                loadRepositories();
+            });
+        }
+        
+        // Search button click event
+        if (searchBtn) {
+            searchBtn.addEventListener('click', () => {
+                if (isLoading) return;
+                if (searchInput) {
+                    searchTerm = searchInput.value;
+                }
+                currentPage = 1;
+                loadRepositories();
+            });
+        }
+        
+        // Search with Enter key
+        if (searchInput) {
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter' && !isLoading) {
+                    searchTerm = e.target.value;
+                    currentPage = 1;
+                    loadRepositories();
+                }
+            });
+        }
+
+        // Pagination events
+        const prevBtn = document.getElementById('prev-page');
+        const nextBtn = document.getElementById('next-page');
+        
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                goToPage(currentPage - 1);
+            });
+        }
+        
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                goToPage(currentPage + 1);
+            });
+        }
+        
+    } catch (error) {
+        console.error('이벤트 리스너 설정 실패:', error);
+        ui.showError('An error occurred during page initialization.');
+    }
 });
+
+// Export as global functions
+window.loadRepositories = loadRepositories;
+window.toggleExpand = toggleExpand;
+window.goToPage = goToPage;
+window.copyPullCommand = copyPullCommand;
+window.copyImageId = copyImageId;

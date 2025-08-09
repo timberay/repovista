@@ -43,19 +43,51 @@ router = APIRouter(
 )
 
 
-def get_registry_client() -> RegistryClient:
+async def get_registry_client() -> RegistryClient:
     """
-    Dependency to get Docker Registry client instance
+    Dependency to get Docker Registry client instance with mock support
     
     Returns:
-        RegistryClient: Configured registry client
+        RegistryClient: Configured registry client (or mock in development mode)
     """
-    return RegistryClient(
+    from ..services.mock_registry import MockRegistryClient
+    import logging
+    
+    logger = logging.getLogger(__name__)
+    
+    # Use mock data if configured
+    if settings.use_mock_data:
+        logger.info("Using mock registry data (USE_MOCK_DATA=true)")
+        return MockRegistryClient()
+    
+    # Try to connect to real registry
+    username = settings.registry_username if settings.registry_username else None
+    password = settings.registry_password if settings.registry_password else None
+    
+    client = RegistryClient(
         registry_url=settings.registry_url,
-        username=settings.registry_username if settings.registry_username else None,
-        password=settings.registry_password if settings.registry_password else None,
+        username=username,
+        password=password,
         verify_ssl=True
     )
+    
+    # Check if registry is available
+    try:
+        if await client.ping():
+            return client
+    except Exception as e:
+        logger.warning(f"Registry at {settings.registry_url} is not available: {e}")
+        
+        # Fallback to mock data for development
+        if "localhost" in settings.registry_url or "127.0.0.1" in settings.registry_url:
+            logger.info("Falling back to mock registry data for development")
+            await client.close()
+            return MockRegistryClient()
+        
+        # For production registries, raise the error
+        raise
+    
+    return client
 
 
 def format_file_size(size_bytes: int) -> str:

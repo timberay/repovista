@@ -1,289 +1,332 @@
 # RepoVista - Docker Registry Web UI
 
-RepoVista is a modern, responsive web UI for browsing and managing Docker Registry repositories. It provides an intuitive interface to explore repositories, view tags, and generate pull commands.
+RepoVista는 Docker Registry를 위한 현대적이고 직관적인 웹 인터페이스입니다. 저장소와 태그를 쉽게 탐색하고 관리할 수 있습니다.
 
-## Features
+## 🚀 주요 기능
 
-- 📦 **Repository Browser**: Browse all repositories in your Docker Registry
-- 🏷️ **Tag Management**: View all tags with detailed information (digest, size, creation date)
-- 🔍 **Smart Search**: Real-time search with suggestions and relevance scoring
-- 📊 **Advanced Sorting**: Sort by name, tag count, or last updated date
-- 📄 **Pagination**: Efficient pagination with customizable page sizes
-- 📋 **Copy Commands**: One-click copy for docker pull commands
-- ⚡ **Performance**: Built-in caching with ETag support for optimal performance
-- 🎨 **Responsive Design**: Works seamlessly on desktop and mobile devices
-- 🔒 **Read-Only Access**: Safe, read-only interface to your registry
+### 📦 저장소 관리
+- Docker Registry의 모든 저장소 목록 조회
+- 저장소별 상세 정보 (태그 수, 크기, 마지막 업데이트)
+- 저장소 검색 및 필터링
+- 다양한 정렬 옵션 (이름, 태그 수, 업데이트 날짜)
 
-## Quick Start
+### 🏷️ 태그 관리
+- 저장소별 태그 목록 조회
+- 태그별 상세 정보 (크기, 아키텍처, OS)
+- 태그 검색 및 정렬
+- Pull 명령어 자동 생성
 
-### Using Docker Compose (Recommended)
+### 🔍 고급 검색
+- 실시간 검색 (디바운싱 적용)
+- 태그 기반 필터링
+- 검색 제안 기능
 
-1. Clone the repository:
+### 📱 반응형 디자인
+- 모바일, 태블릿, 데스크톱 지원
+- 다크 테마 지원
+- 접근성 고려
+
+### ⚡ 성능 최적화
+- 캐싱 시스템
+- 페이지네이션
+- 지연 로딩
+- ETag 지원
+
+## 🏗️ 아키텍처
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Frontend      │    │   Backend       │    │   Docker        │
+│   (React/Vue)   │◄──►│   (FastAPI)     │◄──►│   Registry      │
+│                 │    │                 │    │                 │
+│ - 저장소 목록    │    │ - API 엔드포인트 │    │ - 이미지 저장소  │
+│ - 태그 관리      │    │ - 캐싱 시스템   │    │ - 태그 관리     │
+│ - 검색 기능      │    │ - 인증 처리     │    │ - 메타데이터    │
+│ - UI 컴포넌트    │    │ - 에러 핸들링   │    │                 │
+└─────────────────┘    └─────────────────┘    └─────────────────┘
+```
+
+## 🛠️ 기술 스택
+
+### Frontend
+- **Vanilla JavaScript** - 모던 ES6+ 문법
+- **CSS3** - CSS 변수, Flexbox, Grid
+- **HTML5** - 시맨틱 마크업
+- **모듈화된 아키텍처** - 컴포넌트 기반 구조
+
+### Backend
+- **FastAPI** - 고성능 Python 웹 프레임워크
+- **Pydantic** - 데이터 검증
+- **aiohttp** - 비동기 HTTP 클라이언트
+- **Redis** - 캐싱 시스템
+
+### Infrastructure
+- **Docker** - 컨테이너화
+- **Nginx** - 리버스 프록시
+- **Docker Compose** - 오케스트레이션
+
+## 📦 설치 및 실행
+
+### 1. 저장소 클론
 ```bash
-git clone <your-repository-url>
+git clone https://github.com/your-username/repovista.git
 cd repovista
 ```
 
-2. Create a `.env` file with your registry configuration:
-```env
-# Docker Registry Configuration
-REGISTRY_URL=https://registry.example.com
-REGISTRY_USERNAME=readonly_user
-REGISTRY_PASSWORD=your_secure_password
-
-# CORS Configuration (comma-separated origins)
-CORS_ORIGINS=http://localhost,http://localhost:8080,https://yourdomain.com
-
-# Optional: API Port (default: 8000)
-API_PORT=8000
-
-# Optional: Frontend Port (default: 8080)
-FRONTEND_PORT=8080
+### 2. 환경 변수 설정
+```bash
+cp env.example .env
+# .env 파일을 편집하여 실제 값으로 수정
 ```
 
-3. Start the services:
+### 3. Docker Compose로 실행
 ```bash
 docker-compose up -d
 ```
 
-4. Access the UI at `http://localhost:8080`
+### 4. 접속
+- Frontend: http://localhost
+- Backend API: http://localhost:8000
+- API 문서: http://localhost:8000/api/docs
 
-### Production Deployment
+## ⚙️ 설정
 
-For production deployment, use the optimized production configuration:
+### 환경 변수
 
+| 변수명 | 설명 | 기본값 |
+|--------|------|--------|
+| `REGISTRY_URL` | Docker Registry URL | `http://localhost:5000` |
+| `REGISTRY_USERNAME` | Registry 사용자명 | - |
+| `REGISTRY_PASSWORD` | Registry 비밀번호 | - |
+| `API_PORT` | 백엔드 API 포트 | `8000` |
+| `FRONTEND_PORT` | 프론트엔드 포트 | `80` |
+| `CORS_ORIGINS` | CORS 허용 도메인 | `http://localhost` |
+
+### Docker Registry 설정
+
+#### 로컬 Registry 실행
 ```bash
-docker-compose -f docker-compose.prod.yml up -d
+docker run -d -p 5000:5000 --name registry registry:2
 ```
 
-## Configuration
-
-### Environment Variables
-
-| Variable | Description | Default | Required |
-|----------|-------------|---------|----------|
-| `REGISTRY_URL` | Docker Registry URL | - | Yes |
-| `REGISTRY_USERNAME` | Registry username | - | No |
-| `REGISTRY_PASSWORD` | Registry password | - | No |
-| `CORS_ORIGINS` | Allowed CORS origins (comma-separated) | `http://localhost` | No |
-| `API_PORT` | Backend API port | `8000` | No |
-| `FRONTEND_PORT` | Frontend web server port | `8080` | No |
-
-### Docker Registry Authentication
-
-RepoVista supports multiple authentication methods:
-
-1. **No Authentication**: For public registries
-2. **Basic Authentication**: Username and password
-3. **Token Authentication**: Bearer token support (automatic)
-
-### SSL/TLS Configuration
-
-For production deployments with HTTPS:
-
-1. **Using a Reverse Proxy (Recommended)**:
-
-```nginx
-server {
-    listen 443 ssl http2;
-    server_name repovista.example.com;
-    
-    ssl_certificate /path/to/cert.pem;
-    ssl_certificate_key /path/to/key.pem;
-    
-    location / {
-        proxy_pass http://localhost:8080;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-2. **Direct SSL Configuration**:
-
-Modify `nginx.conf` to include SSL certificates:
-```nginx
-server {
-    listen 443 ssl;
-    ssl_certificate /etc/nginx/certs/cert.pem;
-    ssl_certificate_key /etc/nginx/certs/key.pem;
-    # ... rest of configuration
-}
-```
-
-## Development
-
-### Prerequisites
-
-- Python 3.11+
-- Node.js 18+ (for E2E tests)
-- Docker & Docker Compose
-
-### Backend Development
-
+#### 인증이 필요한 Registry
 ```bash
-# Create virtual environment
+# .env 파일에 인증 정보 추가
+REGISTRY_USERNAME=your-username
+REGISTRY_PASSWORD=your-password
+```
+
+## 🔧 개발
+
+### 로컬 개발 환경
+
+#### 백엔드 개발
+```bash
+cd backend
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install dependencies
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-
-# Run development server
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### Frontend Development
-
-The frontend uses vanilla JavaScript and can be served with any static file server:
-
+#### 프론트엔드 개발
 ```bash
-# Using Python's built-in server
-python -m http.server 8080 --directory frontend
-
-# Or using Node.js
-npx serve frontend -l 8080
+cd frontend
+# 정적 파일 서버 실행 (예: Python)
+python -m http.server 3000
 ```
 
-### Running Tests
-
+### 테스트 실행
 ```bash
-# Backend unit tests with coverage
-python -m pytest --cov=backend --cov-report=html
+# 통합 테스트
+node test-integration.js
 
-# E2E tests with Playwright
-npm install
-npx playwright install
-npm run test:e2e
+# 백엔드 테스트
+cd backend
+pytest
 
-# Performance tests with k6
-k6 run performance-tests/load-test.js
+# 프론트엔드 테스트
+# 브라우저에서 수동 테스트 또는 Playwright 사용
 ```
 
-## API Documentation
+## 📚 API 문서
 
-The API documentation is available at:
-- Swagger UI: `http://localhost:8000/api/docs`
-- ReDoc: `http://localhost:8000/api/redoc`
+### 주요 엔드포인트
 
-### Key Endpoints
+#### 저장소 관련
+- `GET /api/repositories/` - 저장소 목록 조회
+- `GET /api/repositories/{name}` - 저장소 상세 정보
+- `GET /api/repositories/{name}/tags` - 저장소 태그 목록
 
-- `GET /api/repositories` - List repositories with pagination
-- `GET /api/repositories/{name}` - Get repository details
-- `GET /api/repositories/{name}/tags` - List tags for a repository
-- `GET /api/cache/stats` - View cache statistics
-- `POST /api/cache/clear` - Clear cache (manual refresh)
+#### 태그 관련
+- `GET /api/repositories/{name}/tags/{tag}` - 태그 상세 정보
 
-## Performance Optimization
+#### 검색 및 정렬
+- `GET /api/repositories/?search={query}` - 저장소 검색
+- `GET /api/repositories/?sort_by={field}&sort_order={order}` - 정렬
 
-RepoVista includes several performance optimizations:
+### 응답 형식
 
-1. **In-Memory Caching**: Reduces Registry API calls
-2. **ETag Support**: Enables browser caching with 304 responses
-3. **Pagination**: Efficient data loading
-4. **Lazy Loading**: Tags are loaded on-demand
-5. **Debounced Search**: Reduces API calls during typing
+#### 저장소 목록
+```json
+{
+  "repositories": [
+    {
+      "name": "nginx",
+      "tag_count": 15,
+      "last_updated": "2023-12-01T12:00:00Z",
+      "size_bytes": 142857600
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "page_size": 20,
+    "total_pages": 1,
+    "total_items": 1,
+    "has_next": false,
+    "has_previous": false
+  }
+}
+```
 
-### Cache Configuration
+#### 태그 목록
+```json
+{
+  "tags": [
+    {
+      "repository": "nginx",
+      "tag": "latest",
+      "digest": "sha256:...",
+      "size_bytes": 142857600,
+      "size_formatted": "136.2 MB",
+      "created": "2023-12-01T12:00:00Z",
+      "created_formatted": "2 days ago",
+      "architecture": "amd64",
+      "os": "linux",
+      "pull_command": "docker pull localhost:5000/nginx:latest"
+    }
+  ],
+  "page": 1,
+  "page_size": 20,
+  "total_count": 1,
+  "total_pages": 1
+}
+```
 
-The default cache TTL is:
-- Repository list: 5 minutes (300 seconds)
-- Repository with metadata: 1 minute (60 seconds)
-- Tags: 5 minutes (300 seconds)
+## 🎨 UI 컴포넌트
 
-## Monitoring
+### 주요 컴포넌트
+- **RepositoryCard** - 저장소 정보 카드
+- **TagList** - 태그 목록
+- **SearchBar** - 검색 입력
+- **Pagination** - 페이지네이션
+- **Modal** - 모달 다이얼로그
+- **Spinner** - 로딩 스피너
 
-### Health Checks
+### 스타일 시스템
+- CSS 변수 기반 테마 시스템
+- 반응형 디자인
+- 접근성 지원
+- 다크 테마
 
-- Backend health: `http://localhost:8000/api/health`
-- Cache statistics: `http://localhost:8000/api/cache/stats`
+## 🔍 사용법
 
-### Logging
+### 1. 저장소 탐색
+1. 메인 페이지에서 저장소 목록 확인
+2. 검색창에 저장소 이름 입력하여 필터링
+3. 정렬 드롭다운으로 정렬 기준 변경
 
-Logs are available via Docker:
+### 2. 태그 관리
+1. 저장소 카드 클릭하여 상세 정보 확인
+2. 태그 목록에서 특정 태그 선택
+3. Pull 명령어 복사하여 사용
+
+### 3. 검색 및 필터링
+1. 검색창에 키워드 입력 (실시간 검색)
+2. 사이드바의 태그 클릭하여 태그별 필터링
+3. 정렬 옵션으로 결과 정렬
+
+## 🚀 성능 최적화
+
+### 캐싱 전략
+- Redis를 사용한 API 응답 캐싱
+- ETag를 통한 조건부 요청
+- 정적 자산 캐싱
+
+### 프론트엔드 최적화
+- 디바운싱을 통한 검색 최적화
+- 지연 로딩
+- 이미지 최적화
+
+### 백엔드 최적화
+- 비동기 처리
+- 연결 풀링
+- 에러 핸들링
+
+## 🐛 문제 해결
+
+### 일반적인 문제
+
+#### 1. Registry 연결 실패
 ```bash
-# View all logs
-docker-compose logs
+# Registry 상태 확인
+curl http://localhost:5000/v2/
 
-# View backend logs
+# 인증 정보 확인
+docker login localhost:5000
+```
+
+#### 2. CORS 오류
+```bash
+# .env 파일에서 CORS_ORIGINS 설정 확인
+CORS_ORIGINS=http://localhost,http://localhost:3000
+```
+
+#### 3. 포트 충돌
+```bash
+# 사용 중인 포트 확인
+netstat -tulpn | grep :80
+netstat -tulpn | grep :8000
+
+# 포트 변경
+API_PORT=8001
+FRONTEND_PORT=8080
+```
+
+### 로그 확인
+```bash
+# 백엔드 로그
 docker-compose logs backend
 
-# Follow logs in real-time
+# 프론트엔드 로그
+docker-compose logs frontend
+
+# 실시간 로그
 docker-compose logs -f
 ```
 
-## Troubleshooting
+## 🤝 기여하기
 
-### Common Issues
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-1. **Connection Refused to Registry**
-   - Verify `REGISTRY_URL` is correct
-   - Check network connectivity
-   - Ensure registry allows connections
+## 📄 라이선스
 
-2. **Authentication Errors**
-   - Verify credentials in `.env`
-   - Check registry authentication method
-   - Ensure user has read permissions
+이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](LICENSE) 파일을 참조하세요.
 
-3. **CORS Errors**
-   - Add your domain to `CORS_ORIGINS`
-   - Restart the backend service
+## 🙏 감사의 말
 
-4. **Empty Repository List**
-   - Check registry has repositories
-   - Verify authentication is working
-   - Check browser console for errors
+- [Docker Registry](https://docs.docker.com/registry/) - 이미지 저장소
+- [FastAPI](https://fastapi.tiangolo.com/) - 백엔드 프레임워크
+- [Nginx](https://nginx.org/) - 웹 서버
 
-### Debug Mode
+## 📞 지원
 
-Enable debug logging:
-```bash
-# In docker-compose.yml, add to backend service:
-environment:
-  - LOG_LEVEL=DEBUG
-```
+문제가 있거나 질문이 있으시면 [Issues](https://github.com/your-username/repovista/issues)를 통해 문의해 주세요.
 
-## System Requirements
+---
 
-### Minimum Requirements
-- CPU: 1 core
-- RAM: 512MB
-- Disk: 100MB
-- Docker: 20.10+
-- Docker Compose: 2.0+
-
-### Recommended for Production
-- CPU: 2+ cores
-- RAM: 2GB+
-- Disk: 1GB+
-- Load Balancer for HA
-- Monitoring (Prometheus/Grafana)
-
-## Security Considerations
-
-1. **Read-Only Access**: RepoVista only requires read access to the registry
-2. **HTTPS**: Always use HTTPS in production
-3. **Authentication**: Use strong passwords and rotate regularly
-4. **Network Isolation**: Keep RepoVista in a secure network segment
-5. **Updates**: Regularly update dependencies and base images
-
-## Contributing
-
-Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details.
-
-## License
-
-MIT License - see [LICENSE](LICENSE) file for details.
-
-## Support
-
-For issues and feature requests, please contact the development team.
-
-## Acknowledgments
-
-- Built with FastAPI and vanilla JavaScript
-- Inspired by Docker Hub and other registry UIs
-- Icons from Heroicons and Feather Icons
+**RepoVista** - Docker Registry를 더 쉽게 관리하세요! 🐳

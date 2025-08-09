@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # Logging
     log_level: str = "INFO"
     
+    # Development mode - use mock data when registry is unavailable
+    use_mock_data: bool = False
+    
     @property
     def cors_origins_list(self) -> List[str]:
         """Parse comma-separated CORS origins into list"""

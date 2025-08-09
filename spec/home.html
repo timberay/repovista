@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Docker Registry Web UI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            animation: slideUp 0.5s ease-out;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .docker-icon {
+            display: inline-block;
+            margin-right: 15px;
+            font-size: 1.2em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            padding: 25px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e0e0e0;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            min-width: 300px;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 45px 12px 20px;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .search-icon {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #999;
+        }
+
+        .control-btn {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 30px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .control-btn:hover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .repositories {
+            padding: 20px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .repository-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .repository-card:hover {
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            transform: translateY(-3px);
+        }
+
+        .repo-header {
+            padding: 20px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+        }
+
+        .repo-header:hover {
+            background: linear-gradient(135deg, #e0e6ed 0%, #b3c3d8 100%);
+        }
+
+        .repo-info {
+            flex: 1;
+        }
+
+        .repo-name {
+            font-size: 1.3em;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .repo-meta {
+            display: flex;
+            gap: 30px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .expand-icon {
+            font-size: 1.2em;
+            color: #667eea;
+            transition: transform 0.3s ease;
+        }
+
+        .expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+
+        .tags-table {
+            padding: 20px;
+            background: #fafbfc;
+            display: none;
+        }
+
+        .expanded .tags-table {
+            display: block;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                max-height: 500px;
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f1f3f5;
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #495057;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .tag-name {
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        .image-id {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .action-btn {
+            padding: 6px 12px;
+            border: 1px solid #dee2e6;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+        }
+
+        .action-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+            transform: scale(1.05);
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            padding: 30px;
+            gap: 10px;
+        }
+
+        .page-btn {
+            padding: 8px 16px;
+            border: 1px solid #dee2e6;
+            background: white;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .page-btn:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .page-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: transparent;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+
+        /* Scrollbar styling */
+        .repositories::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .repositories::-webkit-scrollbar-track {
+            background: #f1f3f5;
+            border-radius: 10px;
+        }
+
+        .repositories::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 10px;
+        }
+
+        .repositories::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b4299 100%);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><span class="docker-icon">🐳</span>Docker Registry Web UI</h1>
+        </div>
+
+        <div class="controls">
+            <div class="search-box">
+                <input type="text" placeholder="레포지토리 검색...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <button class="control-btn">
+                <span>정렬</span>
+                <span>▼</span>
+            </button>
+            <button class="control-btn">
+                <span>🔄</span>
+                <span>새로고침</span>
+            </button>
+        </div>
+
+        <div class="repositories">
+            <div class="repository-card">
+                <div class="repo-header" onclick="toggleExpand(this)">
+                    <div class="repo-info">
+                        <div class="repo-name">
+                            <span>📦</span>
+                            <span>frontend-application</span>
+                            <span class="badge">50 tags</span>
+                        </div>
+                        <div class="repo-meta">
+                            <span>💾 총 크기: 2.3 GB</span>
+                            <span>📅 최종 업데이트: 2025-08-05 10:30</span>
+                        </div>
+                    </div>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="tags-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>태그명</th>
+                                <th>이미지 ID</th>
+                                <th>크기</th>
+                                <th>생성일시</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="tag-name">latest</td>
+                                <td class="image-id">sha256:a3f4e2c1...</td>
+                                <td>150 MB</td>
+                                <td>2025-08-05 10:30</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tag-name">v2.1.0</td>
+                                <td class="image-id">sha256:b7d8f3a2...</td>
+                                <td>148 MB</td>
+                                <td>2025-08-03 14:22</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tag-name">v2.0.0</td>
+                                <td class="image-id">sha256:c9e1a4b5...</td>
+                                <td>145 MB</td>
+                                <td>2025-08-01 09:15</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="repository-card expanded">
+                <div class="repo-header" onclick="toggleExpand(this)">
+                    <div class="repo-info">
+                        <div class="repo-name">
+                            <span>📦</span>
+                            <span>backend-api-service</span>
+                            <span class="badge">12 tags</span>
+                        </div>
+                        <div class="repo-meta">
+                            <span>💾 총 크기: 1.8 GB</span>
+                            <span>📅 최종 업데이트: 2025-08-07 14:00</span>
+                        </div>
+                    </div>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="tags-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>태그명</th>
+                                <th>이미지 ID</th>
+                                <th>크기</th>
+                                <th>생성일시</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="tag-name">latest</td>
+                                <td class="image-id">sha256:123abc45...</td>
+                                <td>180 MB</td>
+                                <td>2025-08-07 14:00</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tag-name">v1.2.0</td>
+                                <td class="image-id">sha256:456def78...</td>
+                                <td>175 MB</td>
+                                <td>2025-08-05 11:30</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tag-name">v1.1.0</td>
+                                <td class="image-id">sha256:789ghi12...</td>
+                                <td>170 MB</td>
+                                <td>2025-08-01 08:45</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="repository-card">
+                <div class="repo-header" onclick="toggleExpand(this)">
+                    <div class="repo-info">
+                        <div class="repo-name">
+                            <span>📦</span>
+                            <span>database-migration</span>
+                            <span class="badge">8 tags</span>
+                        </div>
+                        <div class="repo-meta">
+                            <span>💾 총 크기: 520 MB</span>
+                            <span>📅 최종 업데이트: 2025-08-01 09:15</span>
+                        </div>
+                    </div>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="tags-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>태그명</th>
+                                <th>이미지 ID</th>
+                                <th>크기</th>
+                                <th>생성일시</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="tag-name">latest</td>
+                                <td class="image-id">sha256:xyz789ab...</td>
+                                <td>65 MB</td>
+                                <td>2025-08-01 09:15</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tag-name">v3.0.0</td>
+                                <td class="image-id">sha256:mno456cd...</td>
+                                <td>64 MB</td>
+                                <td>2025-07-28 16:30</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="repository-card">
+                <div class="repo-header" onclick="toggleExpand(this)">
+                    <div class="repo-info">
+                        <div class="repo-name">
+                            <span>📦</span>
+                            <span>nginx-proxy</span>
+                            <span class="badge">15 tags</span>
+                        </div>
+                        <div class="repo-meta">
+                            <span>💾 총 크기: 890 MB</span>
+                            <span>📅 최종 업데이트: 2025-08-06 17:45</span>
+                        </div>
+                    </div>
+                    <span class="expand-icon">▼</span>
+                </div>
+                <div class="tags-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>태그명</th>
+                                <th>이미지 ID</th>
+                                <th>크기</th>
+                                <th>생성일시</th>
+                                <th>작업</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="tag-name">latest</td>
+                                <td class="image-id">sha256:pqr123ef...</td>
+                                <td>59 MB</td>
+                                <td>2025-08-06 17:45</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="tag-name">alpine</td>
+                                <td class="image-id">sha256:stu456gh...</td>
+                                <td>42 MB</td>
+                                <td>2025-08-05 13:20</td>
+                                <td class="action-buttons">
+                                    <button class="action-btn">Pull</button>
+                                    <button class="action-btn">복사</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="pagination">
+            <button class="page-btn">◀</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">4</button>
+            <button class="page-btn">5</button>
+            <button class="page-btn">▶</button>
+        </div>
+    </div>
+
+    <script>
+        function toggleExpand(element) {
+            const card = element.closest('.repository-card');
+            card.classList.toggle('expanded');
+        }
+
+        // Add click handlers for action buttons
+        document.querySelectorAll('.action-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const action = btn.textContent;
+                if (action === 'Pull') {
+                    const row = btn.closest('tr');
+                    const tag = row.querySelector('.tag-name').textContent;
+                    const repo = btn.closest('.repository-card').querySelector('.repo-name span:nth-child(2)').textContent;
+                    alert(`Pull 명령어:\ndocker pull registry.example.com/${repo}:${tag}`);
+                } else if (action === '복사') {
+                    const row = btn.closest('tr');
+                    const imageId = row.querySelector('.image-id').textContent;
+                    navigator.clipboard.writeText(imageId);
+                    btn.textContent = '✓';
+                    setTimeout(() => {
+                        btn.textContent = '복사';
+                    }, 1000);
+                }
+            });
+        });
+
+        // Add search functionality
+        const searchInput = document.querySelector('.search-box input');
+        searchInput.addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            document.querySelectorAll('.repository-card').forEach(card => {
+                const repoName = card.querySelector('.repo-name').textContent.toLowerCase();
+                card.style.display = repoName.includes(searchTerm) ? 'block' : 'none';
+            });
+        });
+
+        // Add refresh animation
+        document.querySelector('.control-btn:last-child').addEventListener('click', function() {
+            const icon = this.querySelector('span:first-child');
+            icon.style.animation = 'spin 1s linear';
+            setTimeout(() => {
+                icon.style.animation = '';
+                alert('레지스트리가 새로고침되었습니다.');
+            }, 1000);
+        });
+
+        // Add keyframe for refresh animation
+        const style = document.createElement('style');
+        style.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

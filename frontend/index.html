@@ -1,132 +1,46 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="RepoVista - Docker 레지스트리 관리 도구">
-    <meta name="keywords" content="docker, registry, repository, management">
-    <meta name="author" content="RepoVista Team">
-    
-    <title>RepoVista - Docker 레지스트리 관리</title>
-    
-    <!-- 파비콘 -->
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    
-    <!-- CSS -->
+    <title>Docker Registry Web UI (RepoVista)</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
-    
-    <!-- 메타 태그 -->
-    <meta property="og:title" content="RepoVista - Docker 레지스트리 관리">
-    <meta property="og:description" content="Docker 레지스트리를 쉽게 관리하고 탐색할 수 있는 도구">
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="">
-    <meta property="og:image" content="">
-    
-    <!-- 테마 색상 -->
-    <meta name="theme-color" content="#2563eb">
-    <meta name="msapplication-TileColor" content="#2563eb">
-    
-    <!-- 접근성 -->
-    <meta name="robots" content="index, follow">
-    <meta name="format-detection" content="telephone=no">
 </head>
 <body>
-    <!-- 스킵 링크 (접근성) -->
-    <a href="#main" class="sr-only">메인 콘텐츠로 건너뛰기</a>
-    
-    <!-- 앱 컨테이너 -->
-    <div class="app">
-        <!-- 헤더 -->
-        <header class="header" id="header">
-            <div class="container">
-                <div class="header-content">
-                    <h1>RepoVista</h1>
-                    <div class="search-container">
-                        <input type="text" id="search-input" class="input" placeholder="저장소 검색..." />
-                    </div>
-                    <div class="sort-container">
-                        <select id="sort-select" class="input">
-                            <option value="name">이름순</option>
-                            <option value="stars">별표순</option>
-                            <option value="updated">최신순</option>
-                        </select>
-                    </div>
-                </div>
+    <div class="container">
+        <div class="header">
+            <h1><span class="docker-icon">🐳</span>RepoVista</h1>
+            <h4><em>Docker Registry Web UI. &copy; timberay.com</em></h4>
+        </div>
+
+        <div class="controls">
+            <div class="search-group">
+                <button type="button" id="refresh-btn" class="refresh-button">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+                <input type="text" id="search-input" placeholder="Search repositories...">
+                <button type="button" id="search-btn" class="search-button">
+                    <span>🔍</span>
+                    <span>Search</span>
+                </button>
             </div>
-        </header>
+        </div>
 
-        <!-- 메인 콘텐츠 -->
-        <main class="main" id="main">
-            <div class="container">
-                <div class="main-content">
-                    <!-- 사이드바 -->
-                    <aside class="sidebar" id="sidebar">
-                        <div class="sidebar-content">
-                            <h3>태그</h3>
-                            <div class="tag-list" id="tag-list">
-                                <!-- 태그들이 여기에 동적으로 추가됩니다 -->
-                            </div>
-                        </div>
-                    </aside>
-
-                    <!-- 메인 콘텐츠 영역 -->
-                    <div class="content" id="content">
-                        <div class="content-header">
-                            <h2>저장소 목록</h2>
-                        </div>
-                        <div class="repository-grid" id="repository-grid">
-                            <!-- 저장소 카드들이 여기에 동적으로 추가됩니다 -->
-                        </div>
-                    </div>
-                </div>
+        <div class="repositories" id="repositories">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading repositories...</p>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <!-- 알림 컨테이너 -->
-    <div id="notification-container" class="notification-container"></div>
-
-    <!-- 로딩 오버레이 -->
-    <div id="loading-overlay" class="loading-overlay" style="display: none;">
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>로딩 중...</p>
+        <div class="pagination" id="pagination" style="display: none;">
+            <button class="page-btn" id="prev-page">◀</button>
+            <div id="page-numbers"></div>
+            <button class="page-btn" id="next-page">▶</button>
         </div>
     </div>
 
-    <!-- JavaScript 모듈들 -->
-    <script src="js/utils.js"></script>
-    <script src="js/api.js"></script>
-    <script src="js/events.js"></script>
-    <script src="js/store.js"></script>
-    <script src="js/components.js"></script>
     <script src="js/app.js"></script>
-
-    <!-- 성능 모니터링 -->
-    <script>
-        // 페이지 로드 성능 측정
-        window.addEventListener('load', () => {
-            if ('performance' in window) {
-                const perfData = performance.getEntriesByType('navigation')[0];
-                console.log('페이지 로드 시간:', perfData.loadEventEnd - perfData.loadEventStart, 'ms');
-            }
-        });
-
-        // 에러 핸들링
-        window.addEventListener('error', (event) => {
-            console.error('JavaScript 오류:', event.error);
-            if (window.events && window.events.eventManager) {
-                window.events.eventManager.emit('error', event.error);
-            }
-        });
-
-        // Promise 오류 핸들링
-        window.addEventListener('unhandledrejection', (event) => {
-            console.error('Promise 오류:', event.reason);
-            if (window.events && window.events.eventManager) {
-                window.events.eventManager.emit('error', event.reason);
-            }
-        });
-    </script>
 </body>
 </html>
