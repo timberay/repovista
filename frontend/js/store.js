@@ -1,475 +1,485 @@
 /**
- * RepoVista - Enhanced State Management Store
- * Implements immutable state management with Observer pattern
+ * 상태 관리 시스템
+ * @version 1.0.0
  */
 
-(function(window) {
-    'use strict';
+// 상태 변경 구독자 인터페이스
+class Subscriber {
+    constructor(callback) {
+        this.callback = callback;
+        this.id = Math.random().toString(36).substr(2, 9);
+    }
 
-    /**
-     * Store Class
-     * Central state management with immutability and persistence
-     */
-    class Store {
-        constructor(initialState = {}, options = {}) {
-            this._state = this._deepFreeze(this._deepClone(initialState));
-            this._observers = new Map();
-            this._middleware = [];
-            this._history = [];
-            this._historyIndex = -1;
-            this._maxHistorySize = options.maxHistorySize || 50;
-            this._persistKey = options.persistKey || 'repovista_state';
-            this._enablePersistence = options.enablePersistence || false;
-            this._enableDevTools = options.enableDevTools || false;
+    notify(state, prevState) {
+        this.callback(state, prevState);
+    }
+}
 
-            // Load persisted state if enabled
-            if (this._enablePersistence) {
-                this._loadPersistedState();
-            }
+// 상태 관리자
+class Store {
+    constructor(initialState = {}) {
+        this.state = initialState;
+        this.subscribers = new Map();
+        this.middleware = [];
+        this.history = [];
+        this.historyIndex = -1;
+        this.maxHistory = 50;
+    }
 
-            // Connect to Redux DevTools if available and enabled
-            if (this._enableDevTools && window.__REDUX_DEVTOOLS_EXTENSION__) {
-                this._connectDevTools();
-            }
+    // 상태 구독
+    subscribe(callback) {
+        const subscriber = new Subscriber(callback);
+        this.subscribers.set(subscriber.id, subscriber);
+        
+        // 구독 해제 함수 반환
+        return () => {
+            this.subscribers.delete(subscriber.id);
+        };
+    }
 
-            // Save initial state to history
-            this._saveToHistory(this._state);
+    // 상태 변경 알림
+    notifySubscribers(prevState) {
+        this.subscribers.forEach(subscriber => {
+            subscriber.notify(this.state, prevState);
+        });
+    }
+
+    // 상태 업데이트
+    setState(newState, action = 'unknown') {
+        const prevState = { ...this.state };
+        
+        // 미들웨어 체인 실행
+        let processedState = newState;
+        for (const mw of this.middleware) {
+            processedState = mw(processedState, prevState, action);
+            if (!processedState) return; // 미들웨어에서 상태 변경 중단
         }
+        
+        this.state = { ...this.state, ...processedState };
+        
+        // 히스토리에 추가
+        this.addToHistory(prevState, action);
+        
+        // 구독자들에게 알림
+        this.notifySubscribers(prevState);
+    }
 
-        /**
-         * Get current state or specific property
-         */
-        getState(path = null) {
-            if (!path) {
-                return this._deepClone(this._state);
-            }
-
-            const value = this._getValueByPath(this._state, path);
-            return this._deepClone(value);
-        }
-
-        /**
-         * Update state immutably
-         */
-        setState(updater, actionName = 'SET_STATE') {
-            const prevState = this._state;
-            let newState;
-
-            if (typeof updater === 'function') {
-                // Updater function pattern
-                const draft = this._deepClone(prevState);
-                updater(draft);
-                newState = draft;
-            } else {
-                // Direct update object pattern
-                newState = this._deepMerge(prevState, updater);
-            }
-
-            // Ensure immutability
-            newState = this._deepFreeze(this._deepClone(newState));
-
-            // Apply middleware
-            for (const middleware of this._middleware) {
-                const result = middleware(actionName, prevState, newState);
-                if (result === false) {
-                    return; // Middleware cancelled the update
-                }
-                if (result && typeof result === 'object') {
-                    newState = this._deepFreeze(result);
-                }
-            }
-
-            // Update state
-            this._state = newState;
-
-            // Save to history
-            this._saveToHistory(newState, actionName);
-
-            // Persist if enabled
-            if (this._enablePersistence) {
-                this._persistState();
-            }
-
-            // Notify observers
-            this._notifyObservers(prevState, newState, actionName);
-
-            // Update DevTools
-            if (this._devTools) {
-                this._devTools.send(actionName, newState);
-            }
-        }
-
-        /**
-         * Subscribe to state changes
-         */
-        subscribe(observer, filter = null) {
-            if (typeof observer !== 'function') {
-                throw new TypeError('Observer must be a function');
-            }
-
-            const id = Symbol('observer');
-            this._observers.set(id, { callback: observer, filter });
-
-            // Return unsubscribe function
-            return () => {
-                this._observers.delete(id);
-            };
-        }
-
-        /**
-         * Add middleware for state updates
-         */
-        use(middleware) {
-            if (typeof middleware !== 'function') {
-                throw new TypeError('Middleware must be a function');
-            }
-            this._middleware.push(middleware);
-        }
-
-        /**
-         * Create a computed property
-         */
-        computed(name, selector, dependencies = []) {
-            let cachedValue;
-            let cachedDeps = [];
-
-            const computeValue = () => {
-                const currentDeps = dependencies.map(dep => 
-                    this._getValueByPath(this._state, dep)
-                );
-
-                const depsChanged = !this._arrayEquals(currentDeps, cachedDeps);
-                
-                if (depsChanged) {
-                    cachedDeps = currentDeps;
-                    cachedValue = selector(this._state);
-                }
-
-                return cachedValue;
-            };
-
-            // Define getter on store
-            Object.defineProperty(this, name, {
-                get: computeValue,
-                enumerable: true,
-                configurable: true
-            });
-
-            return computeValue;
-        }
-
-        /**
-         * Time travel - undo
-         */
-        undo() {
-            if (this._historyIndex > 0) {
-                this._historyIndex--;
-                const historicState = this._history[this._historyIndex];
-                this._state = this._deepFreeze(this._deepClone(historicState.state));
-                this._notifyObservers(null, this._state, 'UNDO');
-                
-                if (this._devTools) {
-                    this._devTools.send('UNDO', this._state);
-                }
-            }
-        }
-
-        /**
-         * Time travel - redo
-         */
-        redo() {
-            if (this._historyIndex < this._history.length - 1) {
-                this._historyIndex++;
-                const historicState = this._history[this._historyIndex];
-                this._state = this._deepFreeze(this._deepClone(historicState.state));
-                this._notifyObservers(null, this._state, 'REDO');
-                
-                if (this._devTools) {
-                    this._devTools.send('REDO', this._state);
-                }
-            }
-        }
-
-        /**
-         * Reset state to initial
-         */
-        reset() {
-            if (this._history.length > 0) {
-                const initialState = this._history[0];
-                this._state = this._deepFreeze(this._deepClone(initialState.state));
-                this._history = [initialState];
-                this._historyIndex = 0;
-                this._notifyObservers(null, this._state, 'RESET');
-                
-                if (this._devTools) {
-                    this._devTools.send('RESET', this._state);
-                }
-            }
-        }
-
-        /**
-         * Create a scoped store for specific state slice
-         */
-        createScope(path) {
-            const scopedStore = {
-                getState: () => this.getState(path),
-                setState: (updater, actionName) => {
-                    this.setState(state => {
-                        const current = this._getValueByPath(state, path);
-                        const updated = typeof updater === 'function' 
-                            ? updater(current) 
-                            : { ...current, ...updater };
-                        this._setValueByPath(state, path, updated);
-                    }, actionName);
-                },
-                subscribe: (observer) => {
-                    return this.subscribe((prevState, newState) => {
-                        const prevValue = this._getValueByPath(prevState, path);
-                        const newValue = this._getValueByPath(newState, path);
-                        if (!this._deepEquals(prevValue, newValue)) {
-                            observer(prevValue, newValue);
-                        }
-                    });
-                }
-            };
-
-            return scopedStore;
-        }
-
-        // Private methods
-
-        _notifyObservers(prevState, newState, actionName) {
-            this._observers.forEach(({ callback, filter }) => {
-                let shouldNotify = true;
-
-                if (filter) {
-                    if (typeof filter === 'string') {
-                        // Path filter
-                        const prevValue = prevState ? this._getValueByPath(prevState, filter) : undefined;
-                        const newValue = this._getValueByPath(newState, filter);
-                        shouldNotify = !this._deepEquals(prevValue, newValue);
-                    } else if (typeof filter === 'function') {
-                        // Custom filter function
-                        shouldNotify = filter(prevState, newState, actionName);
-                    }
-                }
-
-                if (shouldNotify) {
-                    try {
-                        callback(prevState, newState, actionName);
-                    } catch (error) {
-                        console.error('Observer error:', error);
-                    }
-                }
-            });
-        }
-
-        _saveToHistory(state, actionName = 'INIT') {
-            // Remove future history if we're not at the end
-            if (this._historyIndex < this._history.length - 1) {
-                this._history = this._history.slice(0, this._historyIndex + 1);
-            }
-
-            // Add new state to history
-            this._history.push({
-                state: this._deepClone(state),
-                action: actionName,
-                timestamp: Date.now()
-            });
-
-            // Limit history size
-            if (this._history.length > this._maxHistorySize) {
-                this._history.shift();
-            } else {
-                this._historyIndex++;
-            }
-        }
-
-        _persistState() {
-            try {
-                const serialized = JSON.stringify({
-                    state: this._state,
-                    timestamp: Date.now()
-                });
-                localStorage.setItem(this._persistKey, serialized);
-            } catch (error) {
-                console.error('Failed to persist state:', error);
-            }
-        }
-
-        _loadPersistedState() {
-            try {
-                const serialized = localStorage.getItem(this._persistKey);
-                if (serialized) {
-                    const { state, timestamp } = JSON.parse(serialized);
-                    const age = Date.now() - timestamp;
-                    
-                    // Only load if less than 24 hours old
-                    if (age < 24 * 60 * 60 * 1000) {
-                        this._state = this._deepFreeze(state);
-                        this._saveToHistory(this._state, 'LOAD_PERSISTED');
-                    } else {
-                        localStorage.removeItem(this._persistKey);
-                    }
-                }
-            } catch (error) {
-                console.error('Failed to load persisted state:', error);
-                localStorage.removeItem(this._persistKey);
-            }
-        }
-
-        _connectDevTools() {
-            this._devTools = window.__REDUX_DEVTOOLS_EXTENSION__.connect({
-                name: 'RepoVista Store',
-                features: {
-                    pause: true,
-                    lock: true,
-                    persist: true,
-                    export: true,
-                    import: 'custom',
-                    jump: true,
-                    skip: false,
-                    reorder: false,
-                    dispatch: true,
-                    test: false
-                }
-            });
-
-            this._devTools.init(this._state);
-
-            // Subscribe to DevTools actions
-            this._devTools.subscribe((message) => {
-                if (message.type === 'DISPATCH') {
-                    switch (message.payload.type) {
-                        case 'JUMP_TO_ACTION':
-                        case 'JUMP_TO_STATE':
-                            this._historyIndex = message.payload.actionId;
-                            this._state = this._deepFreeze(
-                                this._deepClone(this._history[this._historyIndex].state)
-                            );
-                            this._notifyObservers(null, this._state, 'DEVTOOLS_JUMP');
-                            break;
-                    }
-                }
-            });
-        }
-
-        // Utility methods
-
-        _deepClone(obj) {
-            if (obj === null || typeof obj !== 'object') return obj;
-            if (obj instanceof Date) return new Date(obj);
-            if (obj instanceof Array) return obj.map(item => this._deepClone(item));
-            if (obj instanceof Set) return new Set(Array.from(obj).map(item => this._deepClone(item)));
-            if (obj instanceof Map) {
-                const cloned = new Map();
-                obj.forEach((value, key) => {
-                    cloned.set(key, this._deepClone(value));
-                });
-                return cloned;
-            }
-
-            const cloned = {};
-            for (const key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    cloned[key] = this._deepClone(obj[key]);
-                }
-            }
-            return cloned;
-        }
-
-        _deepFreeze(obj) {
-            if (obj === null || typeof obj !== 'object') return obj;
-            
-            Object.freeze(obj);
-            Object.getOwnPropertyNames(obj).forEach(prop => {
-                if (obj[prop] !== null && typeof obj[prop] === 'object') {
-                    this._deepFreeze(obj[prop]);
-                }
-            });
-
-            return obj;
-        }
-
-        _deepMerge(target, source) {
-            const result = this._deepClone(target);
-
-            for (const key in source) {
-                if (source.hasOwnProperty(key)) {
-                    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
-                        result[key] = result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])
-                            ? this._deepMerge(result[key], source[key])
-                            : source[key];
-                    } else {
-                        result[key] = source[key];
-                    }
-                }
-            }
-
-            return result;
-        }
-
-        _deepEquals(a, b) {
-            if (a === b) return true;
-            if (a === null || b === null) return false;
-            if (typeof a !== typeof b) return false;
-            
-            if (typeof a !== 'object') return a === b;
-            
-            if (Array.isArray(a) !== Array.isArray(b)) return false;
-            
-            if (Array.isArray(a)) {
-                if (a.length !== b.length) return false;
-                return a.every((item, index) => this._deepEquals(item, b[index]));
-            }
-            
-            const keysA = Object.keys(a);
-            const keysB = Object.keys(b);
-            
-            if (keysA.length !== keysB.length) return false;
-            
-            return keysA.every(key => this._deepEquals(a[key], b[key]));
-        }
-
-        _arrayEquals(a, b) {
-            if (a.length !== b.length) return false;
-            return a.every((item, index) => this._deepEquals(item, b[index]));
-        }
-
-        _getValueByPath(obj, path) {
-            if (!path) return obj;
-            
-            const keys = path.split('.');
-            let current = obj;
-            
-            for (const key of keys) {
-                if (current === null || current === undefined) {
-                    return undefined;
-                }
-                current = current[key];
-            }
-            
-            return current;
-        }
-
-        _setValueByPath(obj, path, value) {
-            const keys = path.split('.');
-            const lastKey = keys.pop();
-            let current = obj;
-            
-            for (const key of keys) {
-                if (!current[key]) {
-                    current[key] = {};
-                }
-                current = current[key];
-            }
-            
-            current[lastKey] = value;
+    // 히스토리에 추가
+    addToHistory(prevState, action) {
+        // 현재 인덱스 이후의 히스토리 제거
+        this.history = this.history.slice(0, this.historyIndex + 1);
+        
+        // 새 히스토리 추가
+        this.history.push({
+            state: { ...this.state },
+            prevState,
+            action,
+            timestamp: Date.now()
+        });
+        
+        this.historyIndex++;
+        
+        // 히스토리 크기 제한
+        if (this.history.length > this.maxHistory) {
+            this.history.shift();
+            this.historyIndex--;
         }
     }
 
-    // Export to global scope
-    window.App = window.App || {};
-    window.App.Store = Store;
+    // 실행 취소
+    undo() {
+        if (this.historyIndex > 0) {
+            this.historyIndex--;
+            const historyItem = this.history[this.historyIndex];
+            this.state = { ...historyItem.state };
+            this.notifySubscribers(historyItem.prevState);
+            return true;
+        }
+        return false;
+    }
 
-})(window);
+    // 다시 실행
+    redo() {
+        if (this.historyIndex < this.history.length - 1) {
+            this.historyIndex++;
+            const historyItem = this.history[this.historyIndex];
+            this.state = { ...historyItem.state };
+            this.notifySubscribers(historyItem.prevState);
+            return true;
+        }
+        return false;
+    }
+
+    // 미들웨어 추가
+    use(middleware) {
+        this.middleware.push(middleware);
+    }
+
+    // 현재 상태 반환
+    getState() {
+        return { ...this.state };
+    }
+
+    // 특정 상태 값 반환
+    get(path) {
+        return path.split('.').reduce((obj, key) => obj?.[key], this.state);
+    }
+
+    // 히스토리 정보 반환
+    getHistory() {
+        return this.history.map(item => ({
+            action: item.action,
+            timestamp: item.timestamp
+        }));
+    }
+
+    // 히스토리 초기화
+    clearHistory() {
+        this.history = [];
+        this.historyIndex = -1;
+    }
+}
+
+// 애플리케이션 상태 관리자
+class AppStore extends Store {
+    constructor() {
+        super({
+            // 사용자 관련 상태
+            user: {
+                isAuthenticated: false,
+                profile: null,
+                preferences: {}
+            },
+            
+            // 저장소 관련 상태
+            repositories: {
+                items: [],
+                loading: false,
+                error: null,
+                filters: {
+                    search: '',
+                    tags: [],
+                    language: '',
+                    sortBy: 'name',
+                    sortOrder: 'asc'
+                },
+                pagination: {
+                    currentPage: 1,
+                    totalPages: 1,
+                    itemsPerPage: 20,
+                    totalItems: 0
+                }
+            },
+            
+            // 태그 관련 상태
+            tags: {
+                items: [],
+                loading: false,
+                error: null,
+                selectedTags: []
+            },
+            
+            // UI 관련 상태
+            ui: {
+                theme: 'light',
+                language: 'ko',
+                sidebarOpen: true,
+                modal: {
+                    isOpen: false,
+                    type: null,
+                    data: null
+                },
+                notifications: []
+            },
+            
+            // 네트워크 관련 상태
+            network: {
+                isOnline: navigator.onLine,
+                pendingRequests: 0,
+                lastError: null
+            }
+        });
+
+        this.setupActions();
+    }
+
+    // 액션 설정
+    setupActions() {
+        // 저장소 액션들
+        this.actions = {
+            // 저장소 목록 로드
+            loadRepositories: async (params = {}) => {
+                this.setState({ 
+                    repositories: { ...this.state.repositories, loading: true, error: null }
+                }, 'loadRepositories:start');
+
+                try {
+                    const response = await window.api.repositories.getRepositories(params);
+                    this.setState({
+                        repositories: {
+                            ...this.state.repositories,
+                            items: response.items || response,
+                            loading: false,
+                            pagination: response.pagination || this.state.repositories.pagination
+                        }
+                    }, 'loadRepositories:success');
+                } catch (error) {
+                    this.setState({
+                        repositories: {
+                            ...this.state.repositories,
+                            loading: false,
+                            error: error.message
+                        }
+                    }, 'loadRepositories:error');
+                }
+            },
+
+            // 저장소 검색
+            searchRepositories: async (query) => {
+                this.setState({
+                    repositories: {
+                        ...this.state.repositories,
+                        filters: { ...this.state.repositories.filters, search: query }
+                    }
+                }, 'searchRepositories');
+
+                await this.actions.loadRepositories({ q: query });
+            },
+
+            // 저장소 정렬
+            sortRepositories: (sortBy, sortOrder = 'asc') => {
+                this.setState({
+                    repositories: {
+                        ...this.state.repositories,
+                        filters: { 
+                            ...this.state.repositories.filters, 
+                            sortBy, 
+                            sortOrder 
+                        }
+                    }
+                }, 'sortRepositories');
+            },
+
+            // 저장소 필터링
+            filterRepositories: (filters) => {
+                this.setState({
+                    repositories: {
+                        ...this.state.repositories,
+                        filters: { ...this.state.repositories.filters, ...filters }
+                    }
+                }, 'filterRepositories');
+            },
+
+            // 태그 목록 로드
+            loadTags: async () => {
+                this.setState({ 
+                    tags: { ...this.state.tags, loading: true, error: null }
+                }, 'loadTags:start');
+
+                try {
+                    const response = await window.api.tags.getTags();
+                    this.setState({
+                        tags: {
+                            ...this.state.tags,
+                            items: response,
+                            loading: false
+                        }
+                    }, 'loadTags:success');
+                } catch (error) {
+                    this.setState({
+                        tags: {
+                            ...this.state.tags,
+                            loading: false,
+                            error: error.message
+                        }
+                    }, 'loadTags:error');
+                }
+            },
+
+            // 태그 선택
+            selectTag: (tag) => {
+                const selectedTags = [...this.state.tags.selectedTags];
+                const index = selectedTags.findIndex(t => t.id === tag.id);
+                
+                if (index > -1) {
+                    selectedTags.splice(index, 1);
+                } else {
+                    selectedTags.push(tag);
+                }
+
+                this.setState({
+                    tags: { ...this.state.tags, selectedTags }
+                }, 'selectTag');
+            },
+
+            // UI 액션들
+            toggleSidebar: () => {
+                this.setState({
+                    ui: { 
+                        ...this.state.ui, 
+                        sidebarOpen: !this.state.ui.sidebarOpen 
+                    }
+                }, 'toggleSidebar');
+            },
+
+            openModal: (type, data = null) => {
+                this.setState({
+                    ui: {
+                        ...this.state.ui,
+                        modal: { isOpen: true, type, data }
+                    }
+                }, 'openModal');
+            },
+
+            closeModal: () => {
+                this.setState({
+                    ui: {
+                        ...this.state.ui,
+                        modal: { isOpen: false, type: null, data: null }
+                    }
+                }, 'closeModal');
+            },
+
+            changeTheme: (theme) => {
+                this.setState({
+                    ui: { ...this.state.ui, theme }
+                }, 'changeTheme');
+            },
+
+            addNotification: (notification) => {
+                const notifications = [...this.state.ui.notifications, {
+                    id: Math.random().toString(36).substr(2, 9),
+                    timestamp: Date.now(),
+                    ...notification
+                }];
+
+                this.setState({
+                    ui: { ...this.state.ui, notifications }
+                }, 'addNotification');
+            },
+
+            removeNotification: (id) => {
+                const notifications = this.state.ui.notifications.filter(n => n.id !== id);
+                this.setState({
+                    ui: { ...this.state.ui, notifications }
+                }, 'removeNotification');
+            },
+
+            // 네트워크 액션들
+            setOnlineStatus: (isOnline) => {
+                this.setState({
+                    network: { ...this.state.network, isOnline }
+                }, 'setOnlineStatus');
+            },
+
+            incrementPendingRequests: () => {
+                this.setState({
+                    network: { 
+                        ...this.state.network, 
+                        pendingRequests: this.state.network.pendingRequests + 1 
+                    }
+                }, 'incrementPendingRequests');
+            },
+
+            decrementPendingRequests: () => {
+                this.setState({
+                    network: { 
+                        ...this.state.network, 
+                        pendingRequests: Math.max(0, this.state.network.pendingRequests - 1) 
+                    }
+                }, 'decrementPendingRequests');
+            },
+
+            setLastError: (error) => {
+                this.setState({
+                    network: { ...this.state.network, lastError: error }
+                }, 'setLastError');
+            }
+        };
+    }
+
+    // 상태 선택자들
+    get selectors() {
+        return {
+            // 저장소 관련 선택자
+            getRepositories: () => this.state.repositories.items,
+            getRepositoriesLoading: () => this.state.repositories.loading,
+            getRepositoriesError: () => this.state.repositories.error,
+            getRepositoriesFilters: () => this.state.repositories.filters,
+            getRepositoriesPagination: () => this.state.repositories.pagination,
+
+            // 태그 관련 선택자
+            getTags: () => this.state.tags.items,
+            getTagsLoading: () => this.state.tags.loading,
+            getTagsError: () => this.state.tags.error,
+            getSelectedTags: () => this.state.tags.selectedTags,
+
+            // UI 관련 선택자
+            getTheme: () => this.state.ui.theme,
+            getLanguage: () => this.state.ui.language,
+            getSidebarOpen: () => this.state.ui.sidebarOpen,
+            getModal: () => this.state.ui.modal,
+            getNotifications: () => this.state.ui.notifications,
+
+            // 네트워크 관련 선택자
+            getIsOnline: () => this.state.network.isOnline,
+            getPendingRequests: () => this.state.network.pendingRequests,
+            getLastError: () => this.state.network.lastError,
+
+            // 복합 선택자
+            getFilteredRepositories: () => {
+                const { items, filters } = this.state.repositories;
+                let filtered = [...items];
+
+                // 검색 필터
+                if (filters.search) {
+                    const searchLower = filters.search.toLowerCase();
+                    filtered = filtered.filter(repo => 
+                        repo.name.toLowerCase().includes(searchLower) ||
+                        repo.description?.toLowerCase().includes(searchLower)
+                    );
+                }
+
+                // 태그 필터
+                if (filters.tags.length > 0) {
+                    filtered = filtered.filter(repo => 
+                        filters.tags.some(tag => repo.tags?.includes(tag))
+                    );
+                }
+
+                // 언어 필터
+                if (filters.language) {
+                    filtered = filtered.filter(repo => 
+                        repo.language === filters.language
+                    );
+                }
+
+                // 정렬
+                filtered.sort((a, b) => {
+                    let aVal = a[filters.sortBy];
+                    let bVal = b[filters.sortBy];
+
+                    if (typeof aVal === 'string') {
+                        aVal = aVal.toLowerCase();
+                        bVal = bVal.toLowerCase();
+                    }
+
+                    if (filters.sortOrder === 'desc') {
+                        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+                    }
+                    return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+                });
+
+                return filtered;
+            }
+        };
+    }
+}
+
+// 전역 스토어 인스턴스 생성
+const appStore = new AppStore();
+
+// 전역으로 노출
+window.store = appStore;
+window.actions = appStore.actions;
+window.selectors = appStore.selectors;

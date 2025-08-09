@@ -71,6 +71,7 @@ async def clear_cache(pattern: str = None) -> Dict[str, Any]:
     count = await cache_service.clear(pattern)
     return {"cleared": count, "pattern": pattern}
 
+
 # Root endpoint
 @app.get("/")
 async def root() -> Dict[str, str]:
@@ -79,8 +80,9 @@ async def root() -> Dict[str, str]:
 
 # Import and include routers
 from .api import repositories, tags
-app.include_router(repositories.router, tags=["repositories"])
+# Include tags router first to ensure specific routes are matched before catch-all
 app.include_router(tags.router)
+app.include_router(repositories.router, tags=["repositories"])
 
 if __name__ == "__main__":
     import uvicorn

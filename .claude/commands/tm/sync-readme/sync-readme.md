@@ -111,7 +111,6 @@ After generation:
 
 Works well with:
 - Git workflows
-- CI/CD pipelines
 - Project documentation
 - Team updates
 - Client reports

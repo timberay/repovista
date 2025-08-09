@@ -111,10 +111,16 @@ async def get_registry_client() -> RegistryClient:
     Returns:
         Configured RegistryClient instance
     """
+    from ..config import settings
+    
+    # Convert empty strings to None for username/password
+    username = settings.registry_username if settings.registry_username else None
+    password = settings.registry_password if settings.registry_password else None
+    
     client = RegistryClient(
         registry_url=settings.registry_url,
-        username=settings.registry_username,
-        password=settings.registry_password,
+        username=username,
+        password=password,
         timeout=30.0,
         max_retries=3
     )

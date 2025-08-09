@@ -1,670 +1,382 @@
 /**
- * RepoVista - Utility Functions
- * Common utility functions and helpers used throughout the application
+ * 유틸리티 함수 모듈
+ * @version 1.0.0
  */
 
-// Ensure App namespace exists
-window.App = window.App || {};
+// 날짜 포맷팅
+export const formatDate = (date, format = 'YYYY-MM-DD') => {
+    if (!date) return '';
+    
+    const d = new Date(date);
+    if (isNaN(d.getTime())) return '';
 
-/**
- * Utility Functions Module
- * Provides common utility functions for the application
- */
-App.Utils = (function() {
-    'use strict';
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const hours = String(d.getHours()).padStart(2, '0');
+    const minutes = String(d.getMinutes()).padStart(2, '0');
+    const seconds = String(d.getSeconds()).padStart(2, '0');
 
-    return {
-        /**
-         * Enhanced debounce function with immediate, trailing, leading, and maxWait options
-         * @param {Function} func - The function to debounce
-         * @param {number} delay - The delay in milliseconds
-         * @param {Object} options - Configuration options
-         * @param {boolean} options.immediate - Execute immediately on first call
-         * @param {number} options.maxWait - Maximum time to wait before forced execution
-         * @param {boolean} options.trailing - Execute on trailing edge (default: true)
-         * @param {boolean} options.leading - Execute on leading edge
-         * @returns {Function} The debounced function with cancel and flush methods
-         */
-        debounceEnhanced(func, delay, options = {}) {
-            let timeoutId = null;
-            let maxTimeoutId = null;
-            let lastCallTime = 0;
-            let lastInvokeTime = 0;
-            let lastArgs = null;
-            let lastThis = null;
-            let result = null;
-            
-            const {
-                immediate = false,
-                maxWait = null,
-                trailing = true,
-                leading = false
-            } = options;
-            
-            // Invoke the function
-            function invokeFunc(time) {
-                const args = lastArgs;
-                const thisArg = lastThis;
-                
-                lastArgs = null;
-                lastThis = null;
-                lastInvokeTime = time;
-                result = func.apply(thisArg, args);
-                return result;
-            }
-            
-            // Start timer for trailing edge
-            function startTimer(pendingFunc, wait) {
-                return setTimeout(pendingFunc, wait);
-            }
-            
-            // Cancel all timers
-            function cancelTimer(id) {
-                if (id !== null) {
-                    clearTimeout(id);
-                }
-            }
-            
-            // Leading edge handler
-            function leadingEdge(time) {
-                lastInvokeTime = time;
-                timeoutId = startTimer(timerExpired, delay);
-                return leading ? invokeFunc(time) : result;
-            }
-            
-            // Calculate remaining wait time
-            function remainingWait(time) {
-                const timeSinceLastCall = time - lastCallTime;
-                const timeSinceLastInvoke = time - lastInvokeTime;
-                const timeWaiting = delay - timeSinceLastCall;
-                
-                return maxWait !== null 
-                    ? Math.min(timeWaiting, maxWait - timeSinceLastInvoke)
-                    : timeWaiting;
-            }
-            
-            // Check if we should invoke now
-            function shouldInvoke(time) {
-                const timeSinceLastCall = time - lastCallTime;
-                const timeSinceLastInvoke = time - lastInvokeTime;
-                
-                return (
-                    lastCallTime === 0 ||
-                    timeSinceLastCall >= delay ||
-                    timeSinceLastCall < 0 ||
-                    (maxWait !== null && timeSinceLastInvoke >= maxWait)
-                );
-            }
-            
-            // Timer expired handler
-            function timerExpired() {
-                const time = Date.now();
-                if (shouldInvoke(time)) {
-                    return trailingEdge(time);
-                }
-                // Restart timer
-                timeoutId = startTimer(timerExpired, remainingWait(time));
-            }
-            
-            // Trailing edge handler
-            function trailingEdge(time) {
-                timeoutId = null;
-                
-                // Only invoke if we have lastArgs which means func was called
-                if (trailing && lastArgs) {
-                    return invokeFunc(time);
-                }
-                lastArgs = null;
-                lastThis = null;
-                return result;
-            }
-            
-            // Main debounced function
-            function debounced(...args) {
-                const time = Date.now();
-                const isInvoking = shouldInvoke(time);
-                
-                lastArgs = args;
-                lastThis = this;
-                lastCallTime = time;
-                
-                if (isInvoking) {
-                    if (timeoutId === null) {
-                        return leadingEdge(lastCallTime);
-                    }
-                    if (maxWait !== null) {
-                        // Handle maxWait
-                        timeoutId = startTimer(timerExpired, delay);
-                        return invokeFunc(lastCallTime);
-                    }
-                }
-                
-                if (timeoutId === null) {
-                    timeoutId = startTimer(timerExpired, delay);
-                }
-                
-                return result;
-            }
-            
-            // Cancel method
-            debounced.cancel = function() {
-                if (timeoutId !== null) {
-                    cancelTimer(timeoutId);
-                }
-                if (maxTimeoutId !== null) {
-                    cancelTimer(maxTimeoutId);
-                }
-                
-                lastInvokeTime = 0;
-                lastArgs = null;
-                lastCallTime = 0;
-                lastThis = null;
-                timeoutId = null;
-                maxTimeoutId = null;
-            };
-            
-            // Flush method - immediately invoke pending function
-            debounced.flush = function() {
-                return timeoutId === null ? result : trailingEdge(Date.now());
-            };
-            
-            // Check if debounced function has pending invocation
-            debounced.pending = function() {
-                return timeoutId !== null;
-            };
-            
-            return debounced;
-        },
-        
-        /**
-         * Basic debounce function (maintained for backward compatibility)
-         */
-        debounce(func, delay) {
-            return this.debounceEnhanced(func, delay, { trailing: true });
-        },
+    return format
+        .replace('YYYY', year)
+        .replace('MM', month)
+        .replace('DD', day)
+        .replace('HH', hours)
+        .replace('mm', minutes)
+        .replace('ss', seconds);
+};
 
-        /**
-         * Throttle function to limit function execution frequency
-         */
-        throttle(func, delay) {
-            let lastCall = 0;
-            return function(...args) {
-                const now = Date.now();
-                if (now - lastCall >= delay) {
-                    lastCall = now;
-                    return func.apply(this, args);
-                }
-            };
-        },
+// 상대적 시간 표시 (예: 3일 전, 1시간 전)
+export const formatRelativeTime = (date) => {
+    if (!date) return '';
+    
+    const now = new Date();
+    const target = new Date(date);
+    const diffMs = now - target;
+    const diffSeconds = Math.floor(diffMs / 1000);
+    const diffMinutes = Math.floor(diffSeconds / 60);
+    const diffHours = Math.floor(diffMinutes / 60);
+    const diffDays = Math.floor(diffHours / 24);
+    const diffMonths = Math.floor(diffDays / 30);
+    const diffYears = Math.floor(diffDays / 365);
 
-        /**
-         * Deep clone an object or array
-         */
-        deepClone(obj) {
-            if (obj === null || typeof obj !== 'object') {
-                return obj;
-            }
+    if (diffYears > 0) return `${diffYears}년 전`;
+    if (diffMonths > 0) return `${diffMonths}개월 전`;
+    if (diffDays > 0) return `${diffDays}일 전`;
+    if (diffHours > 0) return `${diffHours}시간 전`;
+    if (diffMinutes > 0) return `${diffMinutes}분 전`;
+    return '방금 전';
+};
 
-            if (obj instanceof Date) {
-                return new Date(obj.getTime());
-            }
+// 숫자 포맷팅 (천 단위 콤마)
+export const formatNumber = (num) => {
+    if (num === null || num === undefined) return '0';
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+};
 
-            if (obj instanceof Array) {
-                return obj.map(item => this.deepClone(item));
-            }
+// 파일 크기 포맷팅
+export const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
 
-            if (typeof obj === 'object') {
-                const clonedObj = {};
-                Object.keys(obj).forEach(key => {
-                    clonedObj[key] = this.deepClone(obj[key]);
-                });
-                return clonedObj;
-            }
-        },
+// 문자열 자르기
+export const truncate = (str, length = 100, suffix = '...') => {
+    if (!str) return '';
+    if (str.length <= length) return str;
+    return str.substring(0, length) + suffix;
+};
 
-        /**
-         * Format bytes to human readable format
-         */
-        formatBytes(bytes, decimals = 2) {
-            if (bytes === 0) return '0 Bytes';
+// HTML 이스케이프
+export const escapeHtml = (str) => {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+};
 
-            const k = 1024;
-            const dm = decimals < 0 ? 0 : decimals;
-            const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+// URL 파라미터 파싱
+export const parseQueryString = (queryString) => {
+    const params = new URLSearchParams(queryString);
+    const result = {};
+    for (const [key, value] of params) {
+        result[key] = value;
+    }
+    return result;
+};
 
-            const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-        },
+// URL 파라미터 생성
+export const buildQueryString = (params) => {
+    return new URLSearchParams(params).toString();
+};
 
-        /**
-         * Format date to relative time (e.g., "2 hours ago")
-         */
-        formatRelativeTime(date) {
-            const now = new Date();
-            const targetDate = new Date(date);
-            const diffInSeconds = Math.floor((now - targetDate) / 1000);
+// 디바운스 함수
+export const debounce = (func, wait, immediate = false) => {
+    let timeout;
+    return function executedFunction(...args) {
+        const later = () => {
+            timeout = null;
+            if (!immediate) func(...args);
+        };
+        const callNow = immediate && !timeout;
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+        if (callNow) func(...args);
+    };
+};
 
-            if (diffInSeconds < 60) {
-                return 'just now';
-            }
-
-            const intervals = {
-                year: 31536000,
-                month: 2592000,
-                week: 604800,
-                day: 86400,
-                hour: 3600,
-                minute: 60
-            };
-
-            for (const [unit, seconds] of Object.entries(intervals)) {
-                const interval = Math.floor(diffInSeconds / seconds);
-                if (interval >= 1) {
-                    return `${interval} ${unit}${interval > 1 ? 's' : ''} ago`;
-                }
-            }
-
-            return 'just now';
-        },
-
-        /**
-         * Format date to locale string
-         */
-        formatDate(date, options = {}) {
-            const defaultOptions = {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-
-            return new Date(date).toLocaleDateString('en-US', { ...defaultOptions, ...options });
-        },
-
-        /**
-         * Escape HTML characters to prevent XSS
-         */
-        escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        },
-
-        /**
-         * Sanitize string for use in CSS selectors or IDs
-         */
-        sanitizeId(str) {
-            return str.replace(/[^a-zA-Z0-9-_]/g, '-').replace(/--+/g, '-').replace(/^-|-$/g, '');
-        },
-
-        /**
-         * Generate a random UUID v4
-         */
-        generateUUID() {
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                const r = Math.random() * 16 | 0;
-                const v = c == 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        },
-
-        /**
-         * Copy text to clipboard
-         */
-        async copyToClipboard(text) {
-            try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(text);
-                    return true;
-                } else {
-                    // Fallback for older browsers
-                    const textArea = document.createElement('textarea');
-                    textArea.value = text;
-                    textArea.style.position = 'fixed';
-                    textArea.style.left = '-999999px';
-                    textArea.style.top = '-999999px';
-                    document.body.appendChild(textArea);
-                    textArea.focus();
-                    textArea.select();
-
-                    const success = document.execCommand('copy');
-                    document.body.removeChild(textArea);
-                    return success;
-                }
-            } catch (error) {
-                console.error('Failed to copy text to clipboard:', error);
-                return false;
-            }
-        },
-
-        /**
-         * Generate Docker pull command with registry URL
-         */
-        async generatePullCommand(repositoryName, tagName = 'latest', registryUrl = null) {
-            try {
-                // Get registry URL if not provided
-                if (!registryUrl) {
-                    if (App.API) {
-                        const config = await App.API.getRegistryConfig();
-                        registryUrl = config.registry_url;
-                    }
-                }
-
-                // Clean up registry URL (remove protocol and trailing slash)
-                if (registryUrl) {
-                    registryUrl = registryUrl.replace(/^https?:\/\//, '').replace(/\/$/, '');
-                }
-
-                // Generate the pull command
-                const fullImageName = registryUrl ? 
-                    `${registryUrl}/${repositoryName}:${tagName}` : 
-                    `${repositoryName}:${tagName}`;
-
-                return `docker pull ${fullImageName}`;
-            } catch (error) {
-                console.error('Failed to generate pull command:', error);
-                // Fallback to basic command
-                return `docker pull ${repositoryName}:${tagName}`;
-            }
-        },
-
-        /**
-         * Validate email address format
-         */
-        isValidEmail(email) {
-            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return emailRegex.test(email);
-        },
-
-        /**
-         * Validate URL format
-         */
-        isValidUrl(url) {
-            try {
-                new URL(url);
-                return true;
-            } catch {
-                return false;
-            }
-        },
-
-        /**
-         * Create query string from object
-         */
-        createQueryString(params) {
-            const searchParams = new URLSearchParams();
-            Object.keys(params).forEach(key => {
-                const value = params[key];
-                if (value !== null && value !== undefined && value !== '') {
-                    searchParams.set(key, value.toString());
-                }
-            });
-            return searchParams.toString();
-        },
-
-        /**
-         * Parse query string to object
-         */
-        parseQueryString(queryString = window.location.search) {
-            const params = {};
-            const searchParams = new URLSearchParams(queryString);
-            
-            for (const [key, value] of searchParams.entries()) {
-                params[key] = value;
-            }
-            
-            return params;
-        },
-
-        /**
-         * Truncate text to specified length
-         */
-        truncateText(text, maxLength, suffix = '...') {
-            if (!text || text.length <= maxLength) {
-                return text;
-            }
-            return text.substring(0, maxLength - suffix.length) + suffix;
-        },
-
-        /**
-         * Check if element is in viewport
-         */
-        isInViewport(element) {
-            const rect = element.getBoundingClientRect();
-            return (
-                rect.top >= 0 &&
-                rect.left >= 0 &&
-                rect.bottom <= (window.innerHeight || document.documentElement.clientHeight) &&
-                rect.right <= (window.innerWidth || document.documentElement.clientWidth)
-            );
-        },
-
-        /**
-         * Smooth scroll to element
-         */
-        scrollToElement(element, options = {}) {
-            const targetElement = typeof element === 'string' ? 
-                document.querySelector(element) : element;
-
-            if (targetElement) {
-                const defaultOptions = {
-                    behavior: 'smooth',
-                    block: 'start',
-                    inline: 'nearest'
-                };
-
-                targetElement.scrollIntoView({ ...defaultOptions, ...options });
-            }
-        },
-
-        /**
-         * Get element position relative to document
-         */
-        getElementPosition(element) {
-            const targetElement = typeof element === 'string' ? 
-                document.querySelector(element) : element;
-
-            if (!targetElement) return null;
-
-            const rect = targetElement.getBoundingClientRect();
-            return {
-                top: rect.top + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: rect.width,
-                height: rect.height
-            };
-        },
-
-        /**
-         * Local storage helpers with error handling
-         */
-        storage: {
-            set(key, value) {
-                try {
-                    localStorage.setItem(key, JSON.stringify(value));
-                    return true;
-                } catch (error) {
-                    console.error('Failed to save to localStorage:', error);
-                    return false;
-                }
-            },
-
-            get(key, defaultValue = null) {
-                try {
-                    const item = localStorage.getItem(key);
-                    return item ? JSON.parse(item) : defaultValue;
-                } catch (error) {
-                    console.error('Failed to read from localStorage:', error);
-                    return defaultValue;
-                }
-            },
-
-            remove(key) {
-                try {
-                    localStorage.removeItem(key);
-                    return true;
-                } catch (error) {
-                    console.error('Failed to remove from localStorage:', error);
-                    return false;
-                }
-            },
-
-            clear() {
-                try {
-                    localStorage.clear();
-                    return true;
-                } catch (error) {
-                    console.error('Failed to clear localStorage:', error);
-                    return false;
-                }
-            }
-        },
-
-        /**
-         * Performance measurement helpers
-         */
-        performance: {
-            mark(name) {
-                if (window.performance && window.performance.mark) {
-                    window.performance.mark(name);
-                }
-            },
-
-            measure(name, startMark, endMark = null) {
-                if (window.performance && window.performance.measure) {
-                    if (endMark) {
-                        window.performance.measure(name, startMark, endMark);
-                    } else {
-                        window.performance.measure(name, startMark);
-                    }
-                }
-            },
-
-            getEntries() {
-                return window.performance ? window.performance.getEntries() : [];
-            }
-        },
-
-        /**
-         * Toast notification system
-         */
-        toast: {
-            container: null,
-
-            // Initialize toast container
-            init() {
-                if (!this.container) {
-                    this.container = document.createElement('div');
-                    this.container.className = 'toast-container';
-                    this.container.style.cssText = `
-                        position: fixed;
-                        top: 20px;
-                        right: 20px;
-                        z-index: 10000;
-                        pointer-events: none;
-                    `;
-                    document.body.appendChild(this.container);
-                }
-            },
-
-            // Show toast notification
-            show(message, type = 'info', duration = 3000) {
-                this.init();
-
-                const toast = document.createElement('div');
-                toast.className = `toast toast-${type}`;
-                
-                // Base styles for all toasts
-                const baseStyles = `
-                    padding: 12px 16px;
-                    margin-bottom: 8px;
-                    border-radius: 6px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    color: white;
-                    font-size: 14px;
-                    line-height: 1.4;
-                    max-width: 300px;
-                    word-wrap: break-word;
-                    opacity: 0;
-                    transform: translateX(100%);
-                    transition: all 0.3s ease;
-                    pointer-events: auto;
-                `;
-
-                // Type-specific styles
-                const typeStyles = {
-                    success: 'background-color: #10b981;',
-                    error: 'background-color: #ef4444;',
-                    warning: 'background-color: #f59e0b;',
-                    info: 'background-color: #3b82f6;'
-                };
-
-                toast.style.cssText = baseStyles + (typeStyles[type] || typeStyles.info);
-                toast.textContent = message;
-
-                this.container.appendChild(toast);
-
-                // Animate in
-                setTimeout(() => {
-                    toast.style.opacity = '1';
-                    toast.style.transform = 'translateX(0)';
-                }, 10);
-
-                // Auto remove
-                setTimeout(() => {
-                    this.remove(toast);
-                }, duration);
-
-                // Allow manual removal on click
-                toast.addEventListener('click', () => this.remove(toast));
-
-                return toast;
-            },
-
-            // Remove toast with animation
-            remove(toast) {
-                if (toast && toast.parentNode) {
-                    toast.style.opacity = '0';
-                    toast.style.transform = 'translateX(100%)';
-                    setTimeout(() => {
-                        if (toast.parentNode) {
-                            toast.parentNode.removeChild(toast);
-                        }
-                    }, 300);
-                }
-            },
-
-            // Convenience methods
-            success(message, duration) {
-                return this.show(message, 'success', duration);
-            },
-
-            error(message, duration) {
-                return this.show(message, 'error', duration);
-            },
-
-            warning(message, duration) {
-                return this.show(message, 'warning', duration);
-            },
-
-            info(message, duration) {
-                return this.show(message, 'info', duration);
-            }
-        },
-
-        /**
-         * Initialize utility module
-         */
-        init() {
-            // Initialize toast system
-            this.toast.init();
-            console.log('Utils module initialized');
+// 쓰로틀 함수
+export const throttle = (func, limit) => {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
         }
     };
-})();
+};
 
-// Register Utils module with the application core
-if (App.Core) {
-    App.Core.registerModule('Utils', App.Utils);
-}
+// 로컬 스토리지 래퍼
+export const storage = {
+    set: (key, value) => {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (error) {
+            console.error('로컬 스토리지 저장 실패:', error);
+        }
+    },
+    
+    get: (key, defaultValue = null) => {
+        try {
+            const item = localStorage.getItem(key);
+            return item ? JSON.parse(item) : defaultValue;
+        } catch (error) {
+            console.error('로컬 스토리지 읽기 실패:', error);
+            return defaultValue;
+        }
+    },
+    
+    remove: (key) => {
+        try {
+            localStorage.removeItem(key);
+        } catch (error) {
+            console.error('로컬 스토리지 삭제 실패:', error);
+        }
+    },
+    
+    clear: () => {
+        try {
+            localStorage.clear();
+        } catch (error) {
+            console.error('로컬 스토리지 초기화 실패:', error);
+        }
+    }
+};
+
+// 세션 스토리지 래퍼
+export const sessionStorage = {
+    set: (key, value) => {
+        try {
+            window.sessionStorage.setItem(key, JSON.stringify(value));
+        } catch (error) {
+            console.error('세션 스토리지 저장 실패:', error);
+        }
+    },
+    
+    get: (key, defaultValue = null) => {
+        try {
+            const item = window.sessionStorage.getItem(key);
+            return item ? JSON.parse(item) : defaultValue;
+        } catch (error) {
+            console.error('세션 스토리지 읽기 실패:', error);
+            return defaultValue;
+        }
+    },
+    
+    remove: (key) => {
+        try {
+            window.sessionStorage.removeItem(key);
+        } catch (error) {
+            console.error('세션 스토리지 삭제 실패:', error);
+        }
+    },
+    
+    clear: () => {
+        try {
+            window.sessionStorage.clear();
+        } catch (error) {
+            console.error('세션 스토리지 초기화 실패:', error);
+        }
+    }
+};
+
+// 배열 유틸리티
+export const arrayUtils = {
+    // 배열 중복 제거
+    unique: (arr) => [...new Set(arr)],
+    
+    // 배열 그룹화
+    groupBy: (arr, key) => {
+        return arr.reduce((groups, item) => {
+            const group = item[key];
+            groups[group] = groups[group] || [];
+            groups[group].push(item);
+            return groups;
+        }, {});
+    },
+    
+    // 배열 정렬
+    sortBy: (arr, key, order = 'asc') => {
+        return [...arr].sort((a, b) => {
+            let aVal = a[key];
+            let bVal = b[key];
+            
+            if (typeof aVal === 'string') {
+                aVal = aVal.toLowerCase();
+                bVal = bVal.toLowerCase();
+            }
+            
+            if (order === 'desc') {
+                return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+            }
+            return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+        });
+    },
+    
+    // 배열 필터링
+    filterBy: (arr, filters) => {
+        return arr.filter(item => {
+            return Object.keys(filters).every(key => {
+                const filterValue = filters[key];
+                const itemValue = item[key];
+                
+                if (typeof filterValue === 'string') {
+                    return itemValue.toLowerCase().includes(filterValue.toLowerCase());
+                }
+                return itemValue === filterValue;
+            });
+        });
+    }
+};
+
+// 객체 유틸리티
+export const objectUtils = {
+    // 깊은 복사
+    deepClone: (obj) => {
+        if (obj === null || typeof obj !== 'object') return obj;
+        if (obj instanceof Date) return new Date(obj.getTime());
+        if (obj instanceof Array) return obj.map(item => objectUtils.deepClone(item));
+        if (typeof obj === 'object') {
+            const clonedObj = {};
+            for (const key in obj) {
+                if (obj.hasOwnProperty(key)) {
+                    clonedObj[key] = objectUtils.deepClone(obj[key]);
+                }
+            }
+            return clonedObj;
+        }
+    },
+    
+    // 객체 병합
+    merge: (target, ...sources) => {
+        return sources.reduce((merged, source) => {
+            for (const key in source) {
+                if (source.hasOwnProperty(key)) {
+                    if (source[key] && typeof source[key] === 'object' && !Array.isArray(source[key])) {
+                        merged[key] = objectUtils.merge(merged[key] || {}, source[key]);
+                    } else {
+                        merged[key] = source[key];
+                    }
+                }
+            }
+            return merged;
+        }, { ...target });
+    },
+    
+    // 객체에서 특정 키들만 추출
+    pick: (obj, keys) => {
+        return keys.reduce((result, key) => {
+            if (obj.hasOwnProperty(key)) {
+                result[key] = obj[key];
+            }
+            return result;
+        }, {});
+    },
+    
+    // 객체에서 특정 키들 제외
+    omit: (obj, keys) => {
+        return Object.keys(obj).reduce((result, key) => {
+            if (!keys.includes(key)) {
+                result[key] = obj[key];
+            }
+            return result;
+        }, {});
+    }
+};
+
+// DOM 유틸리티
+export const domUtils = {
+    // 요소 생성
+    createElement: (tag, attributes = {}, children = []) => {
+        const element = document.createElement(tag);
+        
+        // 속성 설정
+        Object.keys(attributes).forEach(key => {
+            if (key === 'className') {
+                element.className = attributes[key];
+            } else if (key === 'textContent') {
+                element.textContent = attributes[key];
+            } else {
+                element.setAttribute(key, attributes[key]);
+            }
+        });
+        
+        // 자식 요소 추가
+        children.forEach(child => {
+            if (typeof child === 'string') {
+                element.appendChild(document.createTextNode(child));
+            } else {
+                element.appendChild(child);
+            }
+        });
+        
+        return element;
+    },
+    
+    // 요소 찾기
+    find: (selector, parent = document) => {
+        return parent.querySelector(selector);
+    },
+    
+    // 요소들 찾기
+    findAll: (selector, parent = document) => {
+        return Array.from(parent.querySelectorAll(selector));
+    },
+    
+    // 이벤트 리스너 추가
+    on: (element, event, handler, options = {}) => {
+        element.addEventListener(event, handler, options);
+        return () => element.removeEventListener(event, handler, options);
+    },
+    
+    // 요소 표시/숨김
+    show: (element) => {
+        element.style.display = '';
+    },
+    
+    hide: (element) => {
+        element.style.display = 'none';
+    },
+    
+    // 요소 토글
+    toggle: (element) => {
+        element.style.display = element.style.display === 'none' ? '' : 'none';
+    }
+};
+
+// 전역으로 노출
+window.utils = {
+    formatDate,
+    formatRelativeTime,
+    formatNumber,
+    formatFileSize,
+    truncate,
+    escapeHtml,
+    parseQueryString,
+    buildQueryString,
+    debounce,
+    throttle,
+    storage,
+    sessionStorage,
+    arrayUtils,
+    objectUtils,
+    domUtils
+};

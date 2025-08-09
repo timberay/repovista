@@ -1,607 +1,396 @@
 /**
- * RepoVista - Enhanced Event System
- * EventEmitter implementation with event delegation and performance utilities
+ * 이벤트 관리 시스템
+ * @version 1.0.0
  */
 
-(function(window) {
-    'use strict';
+class EventEmitter {
+    constructor() {
+        this.events = {};
+    }
 
-    /**
-     * EventEmitter Class
-     * Custom event emitter for component communication
-     */
-    class EventEmitter {
-        constructor(options = {}) {
-            this._events = new Map();
-            this._maxListeners = options.maxListeners || 10;
-            this._wildcardEvents = new Map();
-            this._onceEvents = new Map();
+    // 이벤트 리스너 등록
+    on(event, callback) {
+        if (!this.events[event]) {
+            this.events[event] = [];
         }
+        this.events[event].push(callback);
+        
+        // 구독 해제 함수 반환
+        return () => this.off(event, callback);
+    }
 
-        /**
-         * Register an event listener
-         */
-        on(event, listener, options = {}) {
-            if (typeof listener !== 'function') {
-                throw new TypeError('Listener must be a function');
-            }
-
-            const { once = false, priority = 0 } = options;
-
-            if (event.includes('*')) {
-                // Wildcard event
-                this._addWildcardListener(event, listener, priority);
-            } else {
-                // Regular event
-                if (!this._events.has(event)) {
-                    this._events.set(event, []);
-                }
-
-                const listeners = this._events.get(event);
-                
-                // Check max listeners
-                if (listeners.length >= this._maxListeners) {
-                    console.warn(`MaxListenersExceeded: ${event} has ${listeners.length} listeners`);
-                }
-
-                listeners.push({ listener, priority, once });
-                listeners.sort((a, b) => b.priority - a.priority);
-            }
-
-            return this;
-        }
-
-        /**
-         * Register a one-time event listener
-         */
-        once(event, listener, options = {}) {
-            return this.on(event, listener, { ...options, once: true });
-        }
-
-        /**
-         * Remove event listener
-         */
-        off(event, listener) {
-            if (event.includes('*')) {
-                // Remove wildcard listener
-                this._removeWildcardListener(event, listener);
-            } else {
-                // Remove regular listener
-                const listeners = this._events.get(event);
-                if (listeners) {
-                    const index = listeners.findIndex(l => l.listener === listener);
-                    if (index !== -1) {
-                        listeners.splice(index, 1);
-                    }
-                    if (listeners.length === 0) {
-                        this._events.delete(event);
-                    }
-                }
-            }
-
-            return this;
-        }
-
-        /**
-         * Emit an event
-         */
-        emit(event, ...args) {
-            const results = [];
-
-            // Emit to exact listeners
-            const listeners = this._events.get(event);
-            if (listeners) {
-                const listenersToCall = [...listeners];
-                listenersToCall.forEach(({ listener, once }) => {
-                    try {
-                        const result = listener.apply(this, args);
-                        results.push(result);
-                        if (once) {
-                            this.off(event, listener);
-                        }
-                    } catch (error) {
-                        console.error(`Error in event listener for ${event}:`, error);
-                        this.emit('error', error);
-                    }
-                });
-            }
-
-            // Emit to wildcard listeners
-            this._wildcardEvents.forEach((listeners, pattern) => {
-                if (this._matchWildcard(event, pattern)) {
-                    listeners.forEach(({ listener }) => {
-                        try {
-                            const result = listener.apply(this, [event, ...args]);
-                            results.push(result);
-                        } catch (error) {
-                            console.error(`Error in wildcard listener for ${pattern}:`, error);
-                            this.emit('error', error);
-                        }
-                    });
-                }
-            });
-
-            return results;
-        }
-
-        /**
-         * Remove all listeners
-         */
-        removeAllListeners(event) {
-            if (event) {
-                this._events.delete(event);
-                this._wildcardEvents.forEach((listeners, pattern) => {
-                    if (this._matchWildcard(event, pattern)) {
-                        this._wildcardEvents.delete(pattern);
-                    }
-                });
-            } else {
-                this._events.clear();
-                this._wildcardEvents.clear();
-            }
-
-            return this;
-        }
-
-        /**
-         * Get listener count
-         */
-        listenerCount(event) {
-            const exact = this._events.get(event);
-            let count = exact ? exact.length : 0;
-
-            this._wildcardEvents.forEach((listeners, pattern) => {
-                if (this._matchWildcard(event, pattern)) {
-                    count += listeners.length;
-                }
-            });
-
-            return count;
-        }
-
-        /**
-         * Get all event names
-         */
-        eventNames() {
-            return [...this._events.keys(), ...this._wildcardEvents.keys()];
-        }
-
-        // Private methods
-
-        _addWildcardListener(pattern, listener, priority) {
-            if (!this._wildcardEvents.has(pattern)) {
-                this._wildcardEvents.set(pattern, []);
-            }
-            const listeners = this._wildcardEvents.get(pattern);
-            listeners.push({ listener, priority });
-            listeners.sort((a, b) => b.priority - a.priority);
-        }
-
-        _removeWildcardListener(pattern, listener) {
-            const listeners = this._wildcardEvents.get(pattern);
-            if (listeners) {
-                const index = listeners.findIndex(l => l.listener === listener);
-                if (index !== -1) {
-                    listeners.splice(index, 1);
-                }
-                if (listeners.length === 0) {
-                    this._wildcardEvents.delete(pattern);
-                }
-            }
-        }
-
-        _matchWildcard(event, pattern) {
-            const regex = new RegExp('^' + pattern.replace(/\*/g, '.*') + '$');
-            return regex.test(event);
+    // 이벤트 리스너 제거
+    off(event, callback) {
+        if (!this.events[event]) return;
+        
+        if (callback) {
+            this.events[event] = this.events[event].filter(cb => cb !== callback);
+        } else {
+            delete this.events[event];
         }
     }
 
-    /**
-     * Enhanced Event Delegation System
-     */
-    class EventDelegator {
-        constructor() {
-            this._delegations = new Map();
-            this._debounceTimers = new Map();
-            this._throttleTimers = new Map();
-        }
-
-        /**
-         * Set up event delegation
-         */
-        delegate(container, selector, eventType, handler, options = {}) {
-            const containerEl = this._getElement(container);
-            if (!containerEl) {
-                throw new Error(`Container not found: ${container}`);
-            }
-
-            const {
-                capture = false,
-                passive = false,
-                once = false,
-                debounce = 0,
-                throttle = 0,
-                preventDefault = false,
-                stopPropagation = false
-            } = options;
-
-            // Create wrapped handler
-            let wrappedHandler = (event) => {
-                const target = event.target.closest(selector);
-                if (target && containerEl.contains(target)) {
-                    // Handle preventDefault and stopPropagation
-                    if (preventDefault) event.preventDefault();
-                    if (stopPropagation) event.stopPropagation();
-
-                    // Call handler with proper context
-                    handler.call(target, event, target);
-                }
-            };
-
-            // Apply debounce if specified
-            if (debounce > 0) {
-                wrappedHandler = this._debounce(wrappedHandler, debounce);
-            }
-
-            // Apply throttle if specified
-            if (throttle > 0) {
-                wrappedHandler = this._throttle(wrappedHandler, throttle);
-            }
-
-            // Add event listener with optimization
-            if (App.EventOptimizer) {
-                App.EventOptimizer.addEventListener(containerEl, eventType, wrappedHandler, {
-                    capture,
-                    passive,
-                    once
-                });
-            } else {
-                containerEl.addEventListener(eventType, wrappedHandler, {
-                    capture,
-                    passive,
-                    once
-                });
-            }
-
-            // Store delegation info for cleanup
-            const delegationId = this._generateId();
-            this._delegations.set(delegationId, {
-                container: containerEl,
-                selector,
-                eventType,
-                handler: wrappedHandler,
-                originalHandler: handler,
-                options: { capture, passive, once }
-            });
-
-            return delegationId;
-        }
-
-        /**
-         * Remove event delegation
-         */
-        undelegate(delegationId) {
-            const delegation = this._delegations.get(delegationId);
-            if (delegation) {
-                // Use EventOptimizer for removal if available
-                if (App.EventOptimizer) {
-                    App.EventOptimizer.removeEventListener(
-                        delegation.container,
-                        delegation.eventType,
-                        delegation.handler
-                    );
-                } else {
-                    delegation.container.removeEventListener(
-                        delegation.eventType,
-                        delegation.handler,
-                        delegation.options
-                    );
-                }
-                this._delegations.delete(delegationId);
-                
-                // Clean up debounce/throttle timers
-                this._clearTimer(delegationId);
-                
-                return true;
-            }
-            return false;
-        }
-
-        /**
-         * Set up multiple delegations at once
-         */
-        delegateMultiple(container, delegations) {
-            const ids = [];
-            
-            for (const [selector, events] of Object.entries(delegations)) {
-                for (const [eventType, handler] of Object.entries(events)) {
-                    const id = this.delegate(container, selector, eventType, handler);
-                    ids.push(id);
-                }
-            }
-            
-            return ids;
-        }
-
-        /**
-         * Debounce utility
-         */
-        _debounce(func, delay) {
-            const timerId = Symbol('debounce');
-            
-            return (...args) => {
-                clearTimeout(this._debounceTimers.get(timerId));
-                
-                const timer = setTimeout(() => {
-                    func.apply(this, args);
-                    this._debounceTimers.delete(timerId);
-                }, delay);
-                
-                this._debounceTimers.set(timerId, timer);
-            };
-        }
-
-        /**
-         * Throttle utility
-         */
-        _throttle(func, limit) {
-            const timerId = Symbol('throttle');
-            let inThrottle = false;
-            
-            return (...args) => {
-                if (!inThrottle) {
-                    func.apply(this, args);
-                    inThrottle = true;
-                    
-                    const timer = setTimeout(() => {
-                        inThrottle = false;
-                        this._throttleTimers.delete(timerId);
-                    }, limit);
-                    
-                    this._throttleTimers.set(timerId, timer);
-                }
-            };
-        }
-
-        /**
-         * Clear timers
-         */
-        _clearTimer(delegationId) {
-            const debounceTimer = this._debounceTimers.get(delegationId);
-            if (debounceTimer) {
-                clearTimeout(debounceTimer);
-                this._debounceTimers.delete(delegationId);
-            }
-            
-            const throttleTimer = this._throttleTimers.get(delegationId);
-            if (throttleTimer) {
-                clearTimeout(throttleTimer);
-                this._throttleTimers.delete(delegationId);
-            }
-        }
-
-        /**
-         * Get element helper
-         */
-        _getElement(selector) {
-            if (typeof selector === 'string') {
-                return document.querySelector(selector);
-            }
-            return selector;
-        }
-
-        /**
-         * Generate unique ID
-         */
-        _generateId() {
-            return `delegation_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        }
-
-        /**
-         * Clean up all delegations
-         */
-        cleanup() {
-            this._delegations.forEach((delegation, id) => {
-                this.undelegate(id);
-            });
-            
-            // Clear all timers
-            this._debounceTimers.forEach(timer => clearTimeout(timer));
-            this._debounceTimers.clear();
-            
-            this._throttleTimers.forEach(timer => clearTimeout(timer));
-            this._throttleTimers.clear();
-        }
-    }
-
-    /**
-     * Core Event Handlers for RepoVista
-     */
-    class CoreEventHandlers {
-        constructor(emitter, delegator) {
-            this.emitter = emitter;
-            this.delegator = delegator;
-            this._handlers = new Map();
-        }
-
-        /**
-         * Initialize core event handlers
-         */
-        init() {
-            // Repository card click
-            this._handlers.set('repo-click', 
-                this.delegator.delegate(
-                    '#repositories-grid',
-                    '.repository-card',
-                    'click',
-                    (event, target) => {
-                        const repoName = target.dataset.repository;
-                        this.emitter.emit('repository:selected', { name: repoName, element: target });
-                    },
-                    { preventDefault: true }
-                )
-            );
-
-            // Tag selection
-            this._handlers.set('tag-click',
-                this.delegator.delegate(
-                    '#repositories-grid',
-                    '.tag-item',
-                    'click',
-                    (event, target) => {
-                        const tagName = target.dataset.tag;
-                        const repoName = target.closest('.repository-card').dataset.repository;
-                        this.emitter.emit('tag:selected', { repository: repoName, tag: tagName, element: target });
-                    },
-                    { preventDefault: true, stopPropagation: true }
-                )
-            );
-
-            // Search input
-            const searchInput = document.getElementById('search-input');
-            if (searchInput) {
-                searchInput.addEventListener('input', 
-                    this._createDebounced((event) => {
-                        this.emitter.emit('search:query', { query: event.target.value });
-                    }, 300)
-                );
-            }
-
-            // Pagination controls
-            this._handlers.set('pagination',
-                this.delegator.delegate(
-                    '.pagination-controls',
-                    '.page-button',
-                    'click',
-                    (event, target) => {
-                        const page = parseInt(target.dataset.page, 10);
-                        this.emitter.emit('pagination:change', { page });
-                    },
-                    { preventDefault: true }
-                )
-            );
-
-            // Sort controls
-            this._handlers.set('sort',
-                this.delegator.delegate(
-                    '.sort-controls',
-                    '.sort-option',
-                    'click',
-                    (event, target) => {
-                        const sortBy = target.dataset.sort;
-                        this.emitter.emit('sort:change', { sortBy });
-                    },
-                    { preventDefault: true }
-                )
-            );
-
-            // Page size selector
-            const pageSizeSelector = document.getElementById('page-size');
-            if (pageSizeSelector) {
-                pageSizeSelector.addEventListener('change', (event) => {
-                    const pageSize = parseInt(event.target.value, 10);
-                    this.emitter.emit('pagesize:change', { pageSize });
-                });
-            }
-
-            // Copy to clipboard
-            this._handlers.set('copy',
-                this.delegator.delegate(
-                    'body',
-                    '.copy-button',
-                    'click',
-                    (event, target) => {
-                        const text = target.dataset.copyText || target.previousElementSibling?.textContent;
-                        this._copyToClipboard(text);
-                        this.emitter.emit('clipboard:copy', { text, element: target });
-                    },
-                    { preventDefault: true }
-                )
-            );
-
-            // Accordion toggle
-            this._handlers.set('accordion',
-                this.delegator.delegate(
-                    '#repositories-grid',
-                    '.accordion-toggle',
-                    'click',
-                    (event, target) => {
-                        const content = target.nextElementSibling;
-                        const isExpanded = target.getAttribute('aria-expanded') === 'true';
-                        
-                        target.setAttribute('aria-expanded', !isExpanded);
-                        content.style.display = isExpanded ? 'none' : 'block';
-                        
-                        this.emitter.emit('accordion:toggle', { 
-                            element: target, 
-                            expanded: !isExpanded 
-                        });
-                    },
-                    { preventDefault: true }
-                )
-            );
-
-            console.log('Core event handlers initialized');
-        }
-
-        /**
-         * Clean up event handlers
-         */
-        cleanup() {
-            this._handlers.forEach(id => {
-                this.delegator.undelegate(id);
-            });
-            this._handlers.clear();
-        }
-
-        /**
-         * Create debounced function
-         */
-        _createDebounced(func, delay) {
-            let timeoutId;
-            return function(...args) {
-                clearTimeout(timeoutId);
-                timeoutId = setTimeout(() => func.apply(this, args), delay);
-            };
-        }
-
-        /**
-         * Copy text to clipboard
-         */
-        async _copyToClipboard(text) {
+    // 이벤트 발생
+    emit(event, ...args) {
+        if (!this.events[event]) return;
+        
+        this.events[event].forEach(callback => {
             try {
-                if (navigator.clipboard && window.isSecureContext) {
-                    await navigator.clipboard.writeText(text);
-                } else {
-                    // Fallback for older browsers
-                    const textarea = document.createElement('textarea');
-                    textarea.value = text;
-                    textarea.style.position = 'fixed';
-                    textarea.style.opacity = '0';
-                    document.body.appendChild(textarea);
-                    textarea.select();
-                    document.execCommand('copy');
-                    document.body.removeChild(textarea);
-                }
-                
-                this.emitter.emit('notification:show', { 
-                    type: 'success', 
-                    message: 'Copied to clipboard!' 
-                });
+                callback(...args);
             } catch (error) {
-                console.error('Failed to copy to clipboard:', error);
-                this.emitter.emit('notification:show', { 
-                    type: 'error', 
-                    message: 'Failed to copy to clipboard' 
-                });
+                console.error(`이벤트 핸들러 오류 (${event}):`, error);
             }
-        }
+        });
     }
 
-    // Export to global scope
-    window.App = window.App || {};
-    window.App.EventEmitter = EventEmitter;
-    window.App.EventDelegator = EventDelegator;
-    window.App.CoreEventHandlers = CoreEventHandlers;
+    // 모든 이벤트 리스너 제거
+    clear() {
+        this.events = {};
+    }
 
-})(window);
+    // 특정 이벤트의 리스너 수 반환
+    listenerCount(event) {
+        return this.events[event] ? this.events[event].length : 0;
+    }
+}
+
+// 전역 이벤트 버스
+class EventBus extends EventEmitter {
+    constructor() {
+        super();
+        this.middleware = [];
+    }
+
+    // 미들웨어 추가
+    use(middleware) {
+        this.middleware.push(middleware);
+    }
+
+    // 이벤트 발생 (미들웨어 적용)
+    emit(event, ...args) {
+        let data = { event, args };
+        
+        // 미들웨어 체인 실행
+        for (const mw of this.middleware) {
+            data = mw(data);
+            if (!data) return; // 미들웨어에서 이벤트 중단
+        }
+        
+        super.emit(data.event, ...data.args);
+    }
+}
+
+// 애플리케이션 이벤트 관리자
+class AppEventManager {
+    constructor() {
+        this.eventBus = new EventBus();
+        this.setupDefaultEvents();
+    }
+
+    // 기본 이벤트 설정
+    setupDefaultEvents() {
+        // 로딩 상태 변경 이벤트
+        this.on('loading:start', () => {
+            document.body.classList.add('loading');
+        });
+
+        this.on('loading:end', () => {
+            document.body.classList.remove('loading');
+        });
+
+        // 에러 이벤트
+        this.on('error', (error) => {
+            console.error('애플리케이션 오류:', error);
+            this.showErrorNotification(error);
+        });
+
+        // 성공 이벤트
+        this.on('success', (message) => {
+            this.showSuccessNotification(message);
+        });
+
+        // 경고 이벤트
+        this.on('warning', (message) => {
+            this.showWarningNotification(message);
+        });
+
+        // 정보 이벤트
+        this.on('info', (message) => {
+            this.showInfoNotification(message);
+        });
+    }
+
+    // 이벤트 리스너 등록
+    on(event, callback) {
+        return this.eventBus.on(event, callback);
+    }
+
+    // 이벤트 리스너 제거
+    off(event, callback) {
+        this.eventBus.off(event, callback);
+    }
+
+    // 이벤트 발생
+    emit(event, ...args) {
+        this.eventBus.emit(event, ...args);
+    }
+
+    // 알림 표시 함수들
+    showErrorNotification(error) {
+        const message = error.message || error;
+        this.showNotification(message, 'error');
+    }
+
+    showSuccessNotification(message) {
+        this.showNotification(message, 'success');
+    }
+
+    showWarningNotification(message) {
+        this.showNotification(message, 'warning');
+    }
+
+    showInfoNotification(message) {
+        this.showNotification(message, 'info');
+    }
+
+    showNotification(message, type = 'info') {
+        // 알림 컨테이너 생성 또는 찾기
+        let container = document.getElementById('notification-container');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'notification-container';
+            container.className = 'notification-container';
+            document.body.appendChild(container);
+        }
+
+        // 알림 요소 생성
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.innerHTML = `
+            <span class="notification-message">${message}</span>
+            <button class="notification-close">&times;</button>
+        `;
+
+        // 닫기 버튼 이벤트
+        const closeBtn = notification.querySelector('.notification-close');
+        closeBtn.addEventListener('click', () => {
+            notification.remove();
+        });
+
+        // 자동 제거 (5초 후)
+        setTimeout(() => {
+            if (notification.parentNode) {
+                notification.remove();
+            }
+        }, 5000);
+
+        container.appendChild(notification);
+    }
+}
+
+// 저장소 관련 이벤트
+class RepositoryEvents {
+    constructor(eventManager) {
+        this.eventManager = eventManager;
+    }
+
+    // 저장소 목록 로드 시작
+    loadStart() {
+        this.eventManager.emit('repositories:load:start');
+    }
+
+    // 저장소 목록 로드 완료
+    loadComplete(repositories) {
+        this.eventManager.emit('repositories:load:complete', repositories);
+    }
+
+    // 저장소 목록 로드 실패
+    loadError(error) {
+        this.eventManager.emit('repositories:load:error', error);
+    }
+
+    // 저장소 검색
+    search(query) {
+        this.eventManager.emit('repositories:search', query);
+    }
+
+    // 저장소 정렬
+    sort(criteria) {
+        this.eventManager.emit('repositories:sort', criteria);
+    }
+
+    // 저장소 필터링
+    filter(filters) {
+        this.eventManager.emit('repositories:filter', filters);
+    }
+
+    // 저장소 선택
+    select(repository) {
+        this.eventManager.emit('repositories:select', repository);
+    }
+
+    // 저장소 상세 보기
+    viewDetails(repository) {
+        this.eventManager.emit('repositories:view:details', repository);
+    }
+}
+
+// 태그 관련 이벤트
+class TagEvents {
+    constructor(eventManager) {
+        this.eventManager = eventManager;
+    }
+
+    // 태그 목록 로드 시작
+    loadStart() {
+        this.eventManager.emit('tags:load:start');
+    }
+
+    // 태그 목록 로드 완료
+    loadComplete(tags) {
+        this.eventManager.emit('tags:load:complete', tags);
+    }
+
+    // 태그 목록 로드 실패
+    loadError(error) {
+        this.eventManager.emit('tags:load:error', error);
+    }
+
+    // 태그 선택
+    select(tag) {
+        this.eventManager.emit('tags:select', tag);
+    }
+
+    // 태그 필터링
+    filter(tag) {
+        this.eventManager.emit('tags:filter', tag);
+    }
+
+    // 태그 생성
+    create(tagData) {
+        this.eventManager.emit('tags:create', tagData);
+    }
+
+    // 태그 수정
+    update(tagId, tagData) {
+        this.eventManager.emit('tags:update', tagId, tagData);
+    }
+
+    // 태그 삭제
+    delete(tagId) {
+        this.eventManager.emit('tags:delete', tagId);
+    }
+}
+
+// UI 관련 이벤트
+class UIEvents {
+    constructor(eventManager) {
+        this.eventManager = eventManager;
+    }
+
+    // 모달 열기
+    openModal(modalData) {
+        this.eventManager.emit('ui:modal:open', modalData);
+    }
+
+    // 모달 닫기
+    closeModal() {
+        this.eventManager.emit('ui:modal:close');
+    }
+
+    // 사이드바 토글
+    toggleSidebar() {
+        this.eventManager.emit('ui:sidebar:toggle');
+    }
+
+    // 테마 변경
+    changeTheme(theme) {
+        this.eventManager.emit('ui:theme:change', theme);
+    }
+
+    // 언어 변경
+    changeLanguage(language) {
+        this.eventManager.emit('ui:language:change', language);
+    }
+
+    // 페이지 변경
+    changePage(page) {
+        this.eventManager.emit('ui:page:change', page);
+    }
+
+    // 검색 시작
+    searchStart(query) {
+        this.eventManager.emit('ui:search:start', query);
+    }
+
+    // 검색 완료
+    searchComplete(results) {
+        this.eventManager.emit('ui:search:complete', results);
+    }
+
+    // 검색 취소
+    searchCancel() {
+        this.eventManager.emit('ui:search:cancel');
+    }
+}
+
+// 네트워크 관련 이벤트
+class NetworkEvents {
+    constructor(eventManager) {
+        this.eventManager = eventManager;
+    }
+
+    // 요청 시작
+    requestStart(url) {
+        this.eventManager.emit('network:request:start', url);
+    }
+
+    // 요청 완료
+    requestComplete(url, response) {
+        this.eventManager.emit('network:request:complete', url, response);
+    }
+
+    // 요청 실패
+    requestError(url, error) {
+        this.eventManager.emit('network:request:error', url, error);
+    }
+
+    // 오프라인 상태
+    offline() {
+        this.eventManager.emit('network:offline');
+    }
+
+    // 온라인 상태
+    online() {
+        this.eventManager.emit('network:online');
+    }
+}
+
+// 전역 이벤트 매니저 인스턴스 생성
+const eventManager = new AppEventManager();
+
+// 이벤트 클래스들 인스턴스 생성
+const repositoryEvents = new RepositoryEvents(eventManager);
+const tagEvents = new TagEvents(eventManager);
+const uiEvents = new UIEvents(eventManager);
+const networkEvents = new NetworkEvents(eventManager);
+
+// 전역으로 노출
+window.events = {
+    eventManager,
+    repositoryEvents,
+    tagEvents,
+    uiEvents,
+    networkEvents,
+    EventEmitter,
+    EventBus
+};
+
+// 네트워크 상태 모니터링
+window.addEventListener('online', () => {
+    networkEvents.online();
+});
+
+window.addEventListener('offline', () => {
+    networkEvents.offline();
+});

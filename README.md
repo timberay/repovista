@@ -20,7 +20,7 @@ RepoVista is a modern, responsive web UI for browsing and managing Docker Regist
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/timberay/repovista.git
+git clone <your-repository-url>
 cd repovista
 ```
 
@@ -280,7 +280,7 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Support
 
-For issues and feature requests, please use the [GitHub Issues](https://github.com/your-org/repovista/issues) page.
+For issues and feature requests, please contact the development team.
 
 ## Acknowledgments
 

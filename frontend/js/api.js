@@ -1,362 +1,195 @@
 /**
- * RepoVista - API Communication Module
- * Handles HTTP requests to the backend API with error handling and caching
+ * API 통신 모듈
+ * @version 1.0.0
  */
 
-// Ensure App namespace exists
-window.App = window.App || {};
-
-/**
- * API Module
- * Provides methods for communicating with the RepoVista backend API
- */
-App.API = (function() {
-    'use strict';
-
-    // API configuration
-    let apiConfig = {
-        baseUrl: '/api',
-        timeout: 10000,
-        retryAttempts: 3,
-        retryDelay: 1000
-    };
-
-    /**
-     * HTTP Client with retry logic and error handling
-     */
-    const httpClient = {
-        async request(url, options = {}) {
-            const config = {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    ...options.headers
-                },
-                ...options
-            };
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), apiConfig.timeout);
-
-            try {
-                const response = await fetch(url, {
-                    ...config,
-                    signal: controller.signal
-                });
-
-                clearTimeout(timeoutId);
-
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-
-                const contentType = response.headers.get('content-type');
-                if (contentType && contentType.includes('application/json')) {
-                    return await response.json();
-                } else {
-                    return await response.text();
-                }
-            } catch (error) {
-                clearTimeout(timeoutId);
-
-                if (error.name === 'AbortError') {
-                    throw new Error(`Request timeout after ${apiConfig.timeout}ms`);
-                }
-
-                throw error;
-            }
-        },
-
-        async requestWithRetry(url, options = {}, attempt = 1) {
-            try {
-                return await this.request(url, options);
-            } catch (error) {
-                if (attempt < apiConfig.retryAttempts) {
-                    console.warn(`Request failed (attempt ${attempt}/${apiConfig.retryAttempts}):`, error.message);
-                    await this.delay(apiConfig.retryDelay * attempt);
-                    return this.requestWithRetry(url, options, attempt + 1);
-                }
-                throw error;
-            }
-        },
-
-        delay(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-    };
-
-    // Debounce utility for search operations
-    const debounceTimers = new Map();
-    
-    function debounce(key, fn, delay = 300) {
-        return function(...args) {
-            // Cancel previous timer for this key
-            if (debounceTimers.has(key)) {
-                clearTimeout(debounceTimers.get(key));
-            }
-            
-            // Set new timer
-            return new Promise((resolve, reject) => {
-                const timerId = setTimeout(async () => {
-                    try {
-                        const result = await fn.apply(this, args);
-                        debounceTimers.delete(key);
-                        resolve(result);
-                    } catch (error) {
-                        debounceTimers.delete(key);
-                        reject(error);
-                    }
-                }, delay);
-                
-                debounceTimers.set(key, timerId);
-            });
+class ApiClient {
+    constructor(baseURL = '/api') {
+        this.baseURL = baseURL;
+        this.defaultHeaders = {
+            'Content-Type': 'application/json',
         };
     }
 
-    return {
-        /**
-         * Configure API settings
-         */
-        configure(config) {
-            apiConfig = { ...apiConfig, ...config };
-        },
+    async request(endpoint, options = {}) {
+        const url = `${this.baseURL}${endpoint}`;
+        const config = {
+            headers: { ...this.defaultHeaders, ...options.headers },
+            ...options
+        };
 
-        /**
-         * Get list of repositories with pagination and filtering
-         */
-        async getRepositories(params = {}) {
-            const queryParams = new URLSearchParams();
+        try {
+            const response = await fetch(url, config);
             
-            // Add pagination parameters
-            if (params.page) queryParams.set('page', params.page);
-            if (params.limit) queryParams.set('limit', params.limit);
-            if (params.offset) queryParams.set('offset', params.offset);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+                return await response.json();
+            }
             
-            // Add filtering parameters
-            if (params.search) queryParams.set('search', params.search);
-            if (params.sort) queryParams.set('sort', params.sort);
-            if (params.order) queryParams.set('order', params.order);
-
-            const url = `${apiConfig.baseUrl}/repositories?${queryParams.toString()}`;
-            
-            try {
-                const cacheKey = `repositories:${queryParams.toString()}`;
-                const cached = App.State ? App.State.getCache(cacheKey) : null;
-                
-                if (cached) {
-                    return cached;
-                }
-
-                const data = await httpClient.requestWithRetry(url);
-                
-                // Cache the response if State module is available
-                if (App.State) {
-                    App.State.setCache(cacheKey, data, 300000); // 5 minutes
-                }
-
-                return data;
-            } catch (error) {
-                console.error('Failed to fetch repositories:', error);
-                throw new Error(`Failed to load repositories: ${error.message}`);
-            }
-        },
-
-        /**
-         * Get tags for a specific repository
-         */
-        async getRepositoryTags(repositoryName, params = {}) {
-            if (!repositoryName) {
-                throw new Error('Repository name is required');
-            }
-
-            const queryParams = new URLSearchParams();
-            if (params.page) queryParams.set('page', params.page);
-            if (params.limit) queryParams.set('limit', params.limit);
-
-            const encodedName = encodeURIComponent(repositoryName);
-            const url = `${apiConfig.baseUrl}/repositories/${encodedName}/tags?${queryParams.toString()}`;
-            
-            try {
-                const cacheKey = `tags:${repositoryName}:${queryParams.toString()}`;
-                const cached = App.State ? App.State.getCache(cacheKey) : null;
-                
-                if (cached) {
-                    return cached;
-                }
-
-                const data = await httpClient.requestWithRetry(url);
-                
-                // Cache the response
-                if (App.State) {
-                    App.State.setCache(cacheKey, data, 180000); // 3 minutes
-                }
-
-                return data;
-            } catch (error) {
-                console.error(`Failed to fetch tags for ${repositoryName}:`, error);
-                throw new Error(`Failed to load tags: ${error.message}`);
-            }
-        },
-
-        /**
-         * Get repository manifest/details
-         */
-        async getRepositoryManifest(repositoryName, tag = 'latest') {
-            if (!repositoryName) {
-                throw new Error('Repository name is required');
-            }
-
-            const encodedName = encodeURIComponent(repositoryName);
-            const encodedTag = encodeURIComponent(tag);
-            const url = `${apiConfig.baseUrl}/repositories/${encodedName}/manifests/${encodedTag}`;
-            
-            try {
-                const cacheKey = `manifest:${repositoryName}:${tag}`;
-                const cached = App.State ? App.State.getCache(cacheKey) : null;
-                
-                if (cached) {
-                    return cached;
-                }
-
-                const data = await httpClient.requestWithRetry(url);
-                
-                // Cache the response
-                if (App.State) {
-                    App.State.setCache(cacheKey, data, 600000); // 10 minutes (manifests don't change often)
-                }
-
-                return data;
-            } catch (error) {
-                console.error(`Failed to fetch manifest for ${repositoryName}:${tag}:`, error);
-                throw new Error(`Failed to load repository manifest: ${error.message}`);
-            }
-        },
-
-        /**
-         * Search repositories by name or other criteria
-         */
-        async searchRepositories(query, params = {}) {
-            if (!query || query.trim() === '') {
-                return this.getRepositories(params);
-            }
-
-            const searchParams = {
-                ...params,
-                search: query.trim()
-            };
-
-            return this.getRepositories(searchParams);
-        },
-
-        /**
-         * Debounced search repositories - optimized for real-time search input
-         */
-        searchRepositoriesDebounced: null, // Will be initialized with debounce function
-
-        /**
-         * Get API health/status
-         */
-        async getHealth() {
-            const url = `${apiConfig.baseUrl}/health`;
-            
-            try {
-                return await httpClient.request(url);
-            } catch (error) {
-                console.error('Health check failed:', error);
-                throw new Error(`API health check failed: ${error.message}`);
-            }
-        },
-
-        /**
-         * Get registry configuration for pull command generation
-         */
-        async getRegistryConfig() {
-            const url = `${apiConfig.baseUrl}/repositories/config`;
-            
-            try {
-                const cacheKey = 'registry:config';
-                const cached = App.State ? App.State.getCache(cacheKey) : null;
-                
-                if (cached) {
-                    return cached;
-                }
-
-                const data = await httpClient.requestWithRetry(url);
-                
-                // Cache the configuration for a longer time
-                if (App.State) {
-                    App.State.setCache(cacheKey, data, 1800000); // 30 minutes
-                }
-
-                return data;
-            } catch (error) {
-                console.error('Failed to fetch registry config:', error);
-                throw new Error(`Failed to load registry configuration: ${error.message}`);
-            }
-        },
-
-        /**
-         * Clear API cache
-         */
-        clearCache(pattern = null) {
-            if (App.State) {
-                App.State.clearCache(pattern);
-            }
-        },
-
-        /**
-         * Cancel pending debounced requests
-         */
-        cancelDebouncedRequests() {
-            debounceTimers.forEach((timerId, key) => {
-                clearTimeout(timerId);
-            });
-            debounceTimers.clear();
-        },
-
-        /**
-         * Get current API configuration
-         */
-        getConfig() {
-            return { ...apiConfig };
-        },
-
-        /**
-         * Initialize API module
-         */
-        init() {
-            // Initialize debounced search method
-            this.searchRepositoriesDebounced = debounce('search', this.searchRepositories.bind(this), 300);
-
-            // Configure based on app configuration
-            if (App.Core) {
-                const appConfig = App.Core.getConfig();
-                if (appConfig.apiUrl) {
-                    this.configure({ baseUrl: appConfig.apiUrl });
-                }
-            }
-
-            // Listen for network events
-            if (App.Events) {
-                // Clear cache on network reconnection
-                window.addEventListener('online', () => {
-                    console.log('Network reconnected, clearing cache');
-                    this.clearCache();
-                    App.Events.emit('api:network-reconnected');
-                });
-
-                window.addEventListener('offline', () => {
-                    console.log('Network disconnected');
-                    App.Events.emit('api:network-disconnected');
-                });
-            }
-
-            console.log('API module initialized');
+            return await response.text();
+        } catch (error) {
+            console.error(`API 요청 실패 (${endpoint}):`, error);
+            throw error;
         }
-    };
-})();
+    }
 
-// Register API module with the application core
-if (App.Core) {
-    App.Core.registerModule('API', App.API, ['State', 'Events']);
+    // GET 요청
+    async get(endpoint, params = {}) {
+        const queryString = new URLSearchParams(params).toString();
+        const url = queryString ? `${endpoint}?${queryString}` : endpoint;
+        return this.request(url, { method: 'GET' });
+    }
+
+    // POST 요청
+    async post(endpoint, data = {}) {
+        return this.request(endpoint, {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+    }
+
+    // PUT 요청
+    async put(endpoint, data = {}) {
+        return this.request(endpoint, {
+            method: 'PUT',
+            body: JSON.stringify(data)
+        });
+    }
+
+    // DELETE 요청
+    async delete(endpoint) {
+        return this.request(endpoint, { method: 'DELETE' });
+    }
 }
+
+// 저장소 관련 API
+class RepositoryAPI extends ApiClient {
+    constructor() {
+        super('/api');
+    }
+
+    // 저장소 목록 조회
+    async getRepositories(params = {}) {
+        return this.get('/repositories', params);
+    }
+
+    // 저장소 상세 조회
+    async getRepository(id) {
+        return this.get(`/repositories/${id}`);
+    }
+
+    // 저장소 검색
+    async searchRepositories(query, params = {}) {
+        return this.get('/repositories/search', { q: query, ...params });
+    }
+
+    // 저장소 생성
+    async createRepository(data) {
+        return this.post('/repositories', data);
+    }
+
+    // 저장소 수정
+    async updateRepository(id, data) {
+        return this.put(`/repositories/${id}`, data);
+    }
+
+    // 저장소 삭제
+    async deleteRepository(id) {
+        return this.delete(`/repositories/${id}`);
+    }
+
+    // 저장소 태그 추가
+    async addTagToRepository(repoId, tagId) {
+        return this.post(`/repositories/${repoId}/tags`, { tag_id: tagId });
+    }
+
+    // 저장소 태그 제거
+    async removeTagFromRepository(repoId, tagId) {
+        return this.delete(`/repositories/${repoId}/tags/${tagId}`);
+    }
+}
+
+// 태그 관련 API
+class TagAPI extends ApiClient {
+    constructor() {
+        super('/api');
+    }
+
+    // 태그 목록 조회
+    async getTags(params = {}) {
+        return this.get('/tags', params);
+    }
+
+    // 태그 상세 조회
+    async getTag(id) {
+        return this.get(`/tags/${id}`);
+    }
+
+    // 태그 생성
+    async createTag(data) {
+        return this.post('/tags', data);
+    }
+
+    // 태그 수정
+    async updateTag(id, data) {
+        return this.put(`/tags/${id}`, data);
+    }
+
+    // 태그 삭제
+    async deleteTag(id) {
+        return this.delete(`/tags/${id}`);
+    }
+
+    // 태그별 저장소 조회
+    async getRepositoriesByTag(tagId, params = {}) {
+        return this.get(`/tags/${tagId}/repositories`, params);
+    }
+}
+
+// 레지스트리 관련 API
+class RegistryAPI extends ApiClient {
+    constructor() {
+        super('/api');
+    }
+
+    // 레지스트리 상태 확인
+    async getStatus() {
+        return this.get('/registry/status');
+    }
+
+    // 레지스트리 통계
+    async getStats() {
+        return this.get('/registry/stats');
+    }
+
+    // 레지스트리 설정 조회
+    async getConfig() {
+        return this.get('/registry/config');
+    }
+
+    // 레지스트리 설정 업데이트
+    async updateConfig(data) {
+        return this.put('/registry/config', data);
+    }
+}
+
+// API 인스턴스 생성
+const api = {
+    repositories: new RepositoryAPI(),
+    tags: new TagAPI(),
+    registry: new RegistryAPI()
+};
+
+// 전역으로 노출
+window.api = api;
+
+// 기존 함수들과의 호환성을 위한 래퍼 함수들
+window.getRepositories = (params) => api.repositories.getRepositories(params);
+window.getRepository = (id) => api.repositories.getRepository(id);
+window.searchRepositories = (query, params) => api.repositories.searchRepositories(query, params);
+window.getTags = (params) => api.tags.getTags(params);
+window.getTag = (id) => api.tags.getTag(id);

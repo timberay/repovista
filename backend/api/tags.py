@@ -51,10 +51,10 @@ def get_registry_client() -> RegistryClient:
         RegistryClient: Configured registry client
     """
     return RegistryClient(
-        registry_url=settings.REGISTRY_URL,
-        username=settings.REGISTRY_USERNAME,
-        password=settings.REGISTRY_PASSWORD,
-        verify_ssl=settings.REGISTRY_VERIFY_SSL
+        registry_url=settings.registry_url,
+        username=settings.registry_username if settings.registry_username else None,
+        password=settings.registry_password if settings.registry_password else None,
+        verify_ssl=True
     )
 
 

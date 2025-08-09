@@ -126,7 +126,7 @@
 			"taskTitle": "Testing and deployment preparation",
 			"complexityScore": 8,
 			"recommendedSubtasks": 8,
-			"expansionPrompt": "Create subtasks for E2E test suite development, integration testing, performance testing/optimization, bug fixing cycles, caching optimization, deployment documentation, CI/CD setup, and final deployment validation",
+			"expansionPrompt": "Create subtasks for E2E test suite development, integration testing, performance testing/optimization, bug fixing cycles, caching optimization, deployment documentation, and final deployment validation",
 			"reasoning": "High complexity as it encompasses comprehensive testing, performance optimization, and ensuring production readiness. Requires coordination of all previous components"
 		}
 	]

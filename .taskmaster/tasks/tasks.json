@@ -953,17 +953,7 @@
             "status": "done",
             "testStrategy": ""
           },
-          {
-            "id": 7,
-            "title": "CI/CD 파이프라인 설정",
-            "description": "자동화된 테스트, 빌드, 배포를 위한 CI/CD 파이프라인 구축",
-            "dependencies": [
-              "15.6"
-            ],
-            "details": "GitHub Actions 또는 GitLab CI를 사용한 CI/CD 워크플로우 작성. 자동화된 테스트 실행 (유닛, 통합, E2E). Docker 이미지 자동 빌드 및 레지스트리 푸시. 보안 스캔 (Trivy, Snyk) 통합. 스테이징 환경 자동 배포. 프로덕션 배포는 수동 승인 후 진행. 배포 롤백 메커니즘 구현.",
-            "status": "done",
-            "testStrategy": ""
-          },
+
           {
             "id": 8,
             "title": "최종 배포 검증",
