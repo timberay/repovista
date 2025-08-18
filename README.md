@@ -76,14 +76,25 @@ RepoVista is a modern and intuitive web interface for Docker Registry, providing
 
 ### Quick Start (Production Deployment)
 
-#### 1. Download and Extract Package
+#### Option 1: Build and Deploy from Source
 ```bash
-# Download the latest release
-wget https://github.com/timberay/repovista/releases/latest/download/repovista-deploy-latest.tar.gz
+# Clone the repository
+git clone https://github.com/timberay/repovista.git
+cd repovista
 
-# Extract package
+# Build Docker images and create deployment package
+./build-and-package.sh
+
+# Extract the generated package
+cd dist
 tar -xzf repovista-deploy-latest.tar.gz
 cd deploy
+```
+
+#### Option 2: Use Pre-built Package (when available)
+```bash
+# Note: Release packages will be available in future releases
+# For now, please use Option 1 to build from source
 ```
 
 #### 2. Run Installation Script
@@ -101,8 +112,8 @@ The installer will:
 
 #### 3. Access the Application
 - Frontend UI: http://localhost:8082
-- Backend API: http://localhost:3032
-- API Documentation: http://localhost:3032/api/docs
+- Backend API: http://localhost:3032/api
+- API Documentation: http://localhost:3032/docs
 
 ### Development Setup
 
@@ -133,13 +144,14 @@ docker-compose up -d
 | `REGISTRY_URL` | Docker Registry URL | `http://localhost:5000` |
 | `REGISTRY_USERNAME` | Registry username (if auth required) | - |
 | `REGISTRY_PASSWORD` | Registry password (if auth required) | - |
-| `API_PORT` | Backend API internal port (container) | `8000` |
-| `FRONTEND_PORT` | Frontend internal port (container) | `80` |
-| `CORS_ORIGINS` | Allowed CORS origins | `http://localhost` |
+| `API_PORT` | Backend API port (host mapping) | `3032` |
+| `FRONTEND_PORT` | Frontend port (host mapping) | `8082` |
+| `CORS_ORIGINS` | Allowed CORS origins | `["http://localhost:8082"]` |
 
-**Note:** Port mapping is configured in `docker-compose.yml`:
-- Backend: Host port `3032` → Container port `8000` (with override file)
-- Frontend: Host port `8082` → Container port `80` (with override file)
+**Note:** Port mapping in Docker:
+- Backend: Host port `3032` → Container port `8000`
+- Frontend: Host port `8082` → Container port `80`
+- Development uses `docker-compose.override.yml` for custom ports
 
 ### Connecting to Docker Registry
 
@@ -166,8 +178,8 @@ REGISTRY_PASSWORD=your-password
 cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 3032
+pip install -r ../requirements.txt
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 #### Frontend Development
@@ -177,19 +189,19 @@ cd frontend
 python -m http.server 8082
 ```
 
-**Note**: Using non-standard ports (3032, 8082) to avoid conflicts with common development services.
+**Note**: The backend runs on port 8000 internally, mapped to 3032 externally via Docker. Frontend uses port 8082 to avoid conflicts.
 
 ### Running Tests
 ```bash
-# Integration tests
-node test-integration.js
-
 # Backend tests
 cd backend
-pytest tests/
+pytest tests/ -v
 
-# Frontend tests
-# Open test-console.html in browser for manual testing
+# Run specific test file
+pytest tests/test_api.py -v
+
+# Frontend tests (manual testing)
+# Open frontend/index.html in browser and test functionality
 ```
 
 ### Building Deployment Package
@@ -424,7 +436,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📞 Support
 
-For issues or questions, please open an issue on [GitHub Issues](https://github.com/your-username/repovista/issues).
+For issues or questions, please open an issue on [GitHub Issues](https://github.com/timberay/repovista/issues).
 
 ---
 
