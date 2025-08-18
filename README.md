@@ -102,6 +102,16 @@ docker-compose up -d
 - Backend API: http://localhost:3032/api
 - API Documentation: http://localhost:3032/docs
 
+#### 5. Trouble shooting
+- **docker-compose install**: 
+```bash
+sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+
+sudo chmod +x /usr/local/bin/docker-compose
+
+docker-compose --version
+```
+
 ### Development Setup
 
 #### 1. Clone Repository
