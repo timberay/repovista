@@ -74,35 +74,55 @@ RepoVista is a modern and intuitive web interface for Docker Registry, providing
 
 ## 📦 Installation & Setup
 
-### 1. Clone Repository
+### Quick Start (Production Deployment)
+
+#### 1. Download and Extract Package
+```bash
+# Download the latest release
+wget https://github.com/timberay/repovista/releases/latest/download/repovista-deploy-latest.tar.gz
+
+# Extract package
+tar -xzf repovista-deploy-latest.tar.gz
+cd deploy
+```
+
+#### 2. Run Installation Script
+```bash
+# Interactive installation
+./install.sh
+```
+
+The installer will:
+- Check Docker and Docker Compose prerequisites
+- Configure environment settings interactively
+- Load pre-built Docker images
+- Start services automatically
+- Verify service health
+
+#### 3. Access the Application
+- Frontend UI: http://localhost:8082
+- Backend API: http://localhost:3032
+- API Documentation: http://localhost:3032/api/docs
+
+### Development Setup
+
+#### 1. Clone Repository
 ```bash
 git clone https://github.com/timberay/repovista.git
 cd repovista
 ```
 
-### 2. Environment Configuration
+#### 2. Environment Configuration
 ```bash
 cp .env.example .env
 # Edit .env file with your Docker Registry settings
 ```
 
-### 3. Run with Docker Compose
-
-**Default ports:**
+#### 3. Run with Docker Compose
 ```bash
+# Uses docker-compose.override.yml for development ports
 docker-compose up -d
 ```
-
-**Custom ports (8082 for frontend, 3032 for backend):**
-```bash
-# The docker-compose.override.yml file automatically applies custom ports
-docker-compose up -d
-```
-
-### 4. Access the Application
-- Frontend UI: http://localhost:8082
-- Backend API: http://localhost:3032
-- API Documentation: http://localhost:3032/api/docs
 
 ## ⚙️ Configuration
 
@@ -173,19 +193,36 @@ pytest tests/
 ```
 
 ### Building Deployment Package
+
+#### Option 1: Source Code Package (for development)
 ```bash
-# Build with default version (v1.0.0)
-./build-deploy-package.sh
+# Create package with source code
+./create-deploy-package.sh
+
+# Create with specific version
+./create-deploy-package.sh --version v2.0.0
+
+# Create ZIP in addition to tar.gz
+./create-deploy-package.sh --zip
+```
+
+#### Option 2: Docker Image Package (for production) 
+```bash
+# Build Docker images and create deployment package
+./build-and-package.sh
+
+# Skip Docker build (use existing images)
+./build-and-package.sh --skip-build
 
 # Build with specific version
-./build-deploy-package.sh v2.0.0
-
-# Force rebuild (ignore cached images)
-./build-deploy-package.sh v2.0.0 --force
-
-# Show help
-./build-deploy-package.sh --help
+./build-and-package.sh --version v2.0.0
 ```
+
+The production package includes:
+- Pre-built Docker images (no source code)
+- Installation script with interactive setup
+- Environment configuration template
+- Docker Compose for easy deployment
 
 ### Docker Management
 ```bash
