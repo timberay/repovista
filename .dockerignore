@@ -36,6 +36,7 @@ ENV/
 
 # Documentation
 *.md
+!INSTALL.md
 docs/
 spec/
 README*
@@ -46,20 +47,28 @@ CHANGELOG*
 .env
 .env.local
 .env.*.local
+!.env.example
 *.log
 *.pid
 *.seed
 *.pid.lock
+dev-tools/
+build-dist.sh
 
 # Test files
 tests/
 test/
 *_test.py
 test_*.py
+e2e-tests/
+performance-tests/
+*.spec.js
+playwright.config.js
+pytest.ini
+test-*.html
 
 # Docker files
-Dockerfile*
-docker-compose*.yml
+docker-compose.override.yml
 .dockerignore
 
 # Node modules (if any)
@@ -67,6 +76,8 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+package.json
+package-lock.json
 
 # Task Master files
 .taskmaster/
