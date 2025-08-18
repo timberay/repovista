@@ -74,43 +74,30 @@ RepoVista is a modern and intuitive web interface for Docker Registry, providing
 
 ## 📦 Installation & Setup
 
-### Quick Start (Production Deployment)
+### Quick Start with Docker Compose
 
-#### Option 1: Build and Deploy from Source
+#### 1. Clone Repository
 ```bash
-# Clone the repository
 git clone https://github.com/timberay/repovista.git
 cd repovista
-
-# Build Docker images and create deployment package
-./build-and-package.sh
-
-# Extract the generated package
-cd dist
-tar -xzf repovista-deploy-latest.tar.gz
-cd deploy
 ```
 
-#### Option 2: Use Pre-built Package (when available)
+#### 2. Configure Environment
 ```bash
-# Note: Release packages will be available in future releases
-# For now, please use Option 1 to build from source
+cp .env.example .env
+# Edit .env file with your Docker Registry settings
 ```
 
-#### 2. Run Installation Script
+#### 3. Run with Docker Compose
 ```bash
-# Interactive installation
-./install.sh
+# Start all services
+docker-compose up -d
+
+# Or use the docker-deploy.sh script
+./docker-deploy.sh start
 ```
 
-The installer will:
-- Check Docker and Docker Compose prerequisites
-- Configure environment settings interactively
-- Load pre-built Docker images
-- Start services automatically
-- Verify service health
-
-#### 3. Access the Application
+#### 4. Access the Application
 - Frontend UI: http://localhost:8082
 - Backend API: http://localhost:3032/api
 - API Documentation: http://localhost:3032/docs
@@ -204,37 +191,19 @@ pytest tests/test_api.py -v
 # Open frontend/index.html in browser and test functionality
 ```
 
-### Building Deployment Package
+### Building Docker Images
 
-#### Option 1: Source Code Package (for development)
 ```bash
-# Create package with source code
-./create-deploy-package.sh
+# Build images with docker-compose
+docker-compose build
 
-# Create with specific version
-./create-deploy-package.sh --version v2.0.0
+# Or build with no cache
+docker-compose build --no-cache
 
-# Create ZIP in addition to tar.gz
-./create-deploy-package.sh --zip
+# Build specific service
+docker-compose build backend
+docker-compose build frontend
 ```
-
-#### Option 2: Docker Image Package (for production) 
-```bash
-# Build Docker images and create deployment package
-./build-and-package.sh
-
-# Skip Docker build (use existing images)
-./build-and-package.sh --skip-build
-
-# Build with specific version
-./build-and-package.sh --version v2.0.0
-```
-
-The production package includes:
-- Pre-built Docker images (no source code)
-- Installation script with interactive setup
-- Environment configuration template
-- Docker Compose for easy deployment
 
 ### Docker Management
 ```bash
