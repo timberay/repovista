@@ -76,7 +76,7 @@ RepoVista is a modern and intuitive web interface for Docker Registry, providing
 
 ### 1. Clone Repository
 ```bash
-git clone https://github.com/your-username/repovista.git
+git clone https://github.com/timberay/repovista.git
 cd repovista
 ```
 
@@ -87,14 +87,22 @@ cp .env.example .env
 ```
 
 ### 3. Run with Docker Compose
+
+**Default ports:**
 ```bash
 docker-compose up -d
 ```
 
+**Custom ports (8082 for frontend, 3032 for backend):**
+```bash
+# The docker-compose.override.yml file automatically applies custom ports
+docker-compose up -d
+```
+
 ### 4. Access the Application
-- Frontend UI: http://localhost
-- Backend API: http://localhost:8000
-- API Documentation: http://localhost:8000/docs
+- Frontend UI: http://localhost:8082
+- Backend API: http://localhost:3032
+- API Documentation: http://localhost:3032/api/docs
 
 ## ⚙️ Configuration
 
@@ -105,23 +113,29 @@ docker-compose up -d
 | `REGISTRY_URL` | Docker Registry URL | `http://localhost:5000` |
 | `REGISTRY_USERNAME` | Registry username (if auth required) | - |
 | `REGISTRY_PASSWORD` | Registry password (if auth required) | - |
-| `API_PORT` | Backend API port | `8000` |
-| `FRONTEND_PORT` | Frontend port | `80` |
+| `API_PORT` | Backend API internal port (container) | `8000` |
+| `FRONTEND_PORT` | Frontend internal port (container) | `80` |
 | `CORS_ORIGINS` | Allowed CORS origins | `http://localhost` |
 
-### Docker Registry Setup
+**Note:** Port mapping is configured in `docker-compose.yml`:
+- Backend: Host port `3032` → Container port `8000` (with override file)
+- Frontend: Host port `8082` → Container port `80` (with override file)
 
-#### Running Local Registry
-```bash
-docker run -d -p 5000:5000 --name registry registry:2
-```
+### Connecting to Docker Registry
 
-#### Authenticated Registry
+RepoVista connects to your existing Docker Registry. Configure the connection in your `.env` file:
+
+#### Registry Configuration
 ```bash
-# Add credentials to .env file
+# Point to your existing Docker Registry
+REGISTRY_URL=https://your-registry.example.com
+
+# Add credentials if authentication is required
 REGISTRY_USERNAME=your-username
 REGISTRY_PASSWORD=your-password
 ```
+
+**Note**: RepoVista is a read-only UI client for Docker Registry. It does not manage or run the Registry itself.
 
 ## 🔧 Development
 
@@ -133,15 +147,17 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 3032
 ```
 
 #### Frontend Development
 ```bash
 cd frontend
 # Serve static files (using Python's built-in server)
-python -m http.server 3000
+python -m http.server 8082
 ```
+
+**Note**: Using non-standard ports (3032, 8082) to avoid conflicts with common development services.
 
 ### Running Tests
 ```bash
@@ -154,6 +170,36 @@ pytest tests/
 
 # Frontend tests
 # Open test-console.html in browser for manual testing
+```
+
+### Building Deployment Package
+```bash
+# Build with default version (v1.0.0)
+./build-deploy-package.sh
+
+# Build with specific version
+./build-deploy-package.sh v2.0.0
+
+# Force rebuild (ignore cached images)
+./build-deploy-package.sh v2.0.0 --force
+
+# Show help
+./build-deploy-package.sh --help
+```
+
+### Docker Management
+```bash
+# Build images (with cache)
+./docker-deploy.sh build
+
+# Force rebuild without cache
+./docker-deploy.sh build --no-cache
+
+# Start services
+./docker-deploy.sh start
+
+# Check health (ports 3032/8082)
+./docker-deploy.sh health
 ```
 
 ## 📚 API Documentation

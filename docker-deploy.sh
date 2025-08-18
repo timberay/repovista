@@ -44,7 +44,15 @@ check_prerequisites() {
 # Function to build images
 build_images() {
     print_color "Building Docker images..." "$YELLOW"
-    docker-compose build --no-cache
+    
+    # Check for --no-cache flag
+    if [ "$1" = "--no-cache" ]; then
+        print_color "Building with --no-cache option..." "$YELLOW"
+        docker-compose build --no-cache
+    else
+        docker-compose build
+    fi
+    
     print_color "Images built successfully!" "$GREEN"
 }
 
@@ -77,18 +85,22 @@ view_logs() {
 check_health() {
     print_color "Checking service health..." "$YELLOW"
     
+    # Read ports from environment or use defaults
+    BACKEND_PORT=${API_PORT:-3032}
+    FRONTEND_PORT=${FRONTEND_PORT:-8082}
+    
     # Check backend health
-    if curl -f http://localhost:8000/api/health &> /dev/null; then
-        print_color "Backend: Healthy" "$GREEN"
+    if curl -f http://localhost:${BACKEND_PORT}/api/health &> /dev/null; then
+        print_color "Backend (port ${BACKEND_PORT}): Healthy" "$GREEN"
     else
-        print_color "Backend: Unhealthy" "$RED"
+        print_color "Backend (port ${BACKEND_PORT}): Unhealthy" "$RED"
     fi
     
     # Check frontend health
-    if curl -f http://localhost/nginx-health &> /dev/null; then
-        print_color "Frontend: Healthy" "$GREEN"
+    if curl -f http://localhost:${FRONTEND_PORT}/nginx-health &> /dev/null; then
+        print_color "Frontend (port ${FRONTEND_PORT}): Healthy" "$GREEN"
     else
-        print_color "Frontend: Unhealthy" "$RED"
+        print_color "Frontend (port ${FRONTEND_PORT}): Unhealthy" "$RED"
     fi
 }
 
@@ -104,7 +116,7 @@ cleanup() {
 case "$1" in
     build)
         check_prerequisites
-        build_images
+        build_images "$2"  # Pass optional --no-cache flag
         ;;
     start)
         check_prerequisites
@@ -131,16 +143,22 @@ case "$1" in
         cleanup
         ;;
     *)
-        echo "Usage: $0 {build|start [prod]|stop|restart [prod]|logs [service]|health|clean}"
+        echo "Usage: $0 {build [--no-cache]|start [prod]|stop|restart [prod]|logs [service]|health|clean}"
         echo ""
         echo "Commands:"
-        echo "  build          - Build Docker images"
-        echo "  start [prod]   - Start services (use 'prod' for production mode)"
-        echo "  stop           - Stop services"
-        echo "  restart [prod] - Restart services"
-        echo "  logs [service] - View logs (optionally specify service: backend/frontend)"
-        echo "  health         - Check service health"
-        echo "  clean          - Clean up Docker resources"
+        echo "  build [--no-cache]  - Build Docker images (optionally without cache)"
+        echo "  start [prod]        - Start services (use 'prod' for production mode)"
+        echo "  stop                - Stop services"
+        echo "  restart [prod]      - Restart services"
+        echo "  logs [service]      - View logs (optionally specify service: backend/frontend)"
+        echo "  health              - Check service health (uses ports 3032/8082)"
+        echo "  clean               - Clean up Docker resources"
+        echo ""
+        echo "Examples:"
+        echo "  $0 build            # Build with cache"
+        echo "  $0 build --no-cache # Force rebuild"
+        echo "  $0 start            # Start in development mode"
+        echo "  $0 start prod       # Start in production mode"
         exit 1
         ;;
 esac

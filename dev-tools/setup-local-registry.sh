@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# ============================================================================
+# DEVELOPMENT/TESTING ONLY
+# This script is for local development and testing purposes only.
+# In production, RepoVista connects to an existing Docker Registry.
+# ============================================================================
+
 # Setup script for local Docker registry with test images
 set -e
 
@@ -188,8 +194,8 @@ REGISTRY_URL=http://${REGISTRY_URL}
 REGISTRY_USERNAME=
 REGISTRY_PASSWORD=
 API_PORT=8000
-FRONTEND_PORT=3000
-CORS_ORIGINS=http://localhost:3000,http://localhost
+FRONTEND_PORT=80
+CORS_ORIGINS=http://localhost:8082,http://localhost:3032,http://localhost
 EOF
 
 print_status "Created .env.local-registry file"
@@ -197,5 +203,9 @@ echo ""
 print_info "To use the local registry with RepoVista:"
 echo "  cp .env.local-registry .env"
 echo "  docker-compose up -d"
+echo ""
+print_info "Access RepoVista at:"
+echo "  Frontend: http://localhost:8082"
+echo "  Backend API: http://localhost:3032"
 echo ""
 print_status "Local registry setup complete!"
