@@ -51,7 +51,8 @@ htmlcov/
 .tox/
 
 # Distribution
-dist/
+dist/*.tar.gz
+dist/*.tar.gz.*
 build/
 *.egg-info/
 
