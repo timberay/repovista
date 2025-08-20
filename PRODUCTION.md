@@ -80,9 +80,9 @@ docker-compose up -d
 
 ### 5. Access the Application
 
-- **Frontend UI**: http://your-server:8082
-- **Backend API**: http://your-server:3032
-- **API Documentation**: http://your-server:3032/api/docs
+- **Frontend UI**: http://your-server:8083
+- **Backend API**: http://your-server:3033
+- **API Documentation**: http://your-server:3033/api/docs
 
 ## Configuration Details
 
@@ -101,7 +101,7 @@ docker-compose up -d
 Ensure proper network connectivity:
 
 1. **From Container to Registry**: RepoVista containers must reach your Registry
-2. **From Browser to RepoVista**: Users must access both frontend (8082) and backend (3032) ports
+2. **From Browser to RepoVista**: Users must access both frontend (8083) and backend (3033) ports
 
 ### SSL/TLS Configuration
 
@@ -122,13 +122,13 @@ server {
     ssl_certificate_key /path/to/key.pem;
     
     location / {
-        proxy_pass http://localhost:8082;
+        proxy_pass http://localhost:8083;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
     
     location /api {
-        proxy_pass http://localhost:3032;
+        proxy_pass http://localhost:3033;
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
     }
@@ -175,13 +175,13 @@ RepoVista includes built-in health check endpoints:
 
 ```bash
 # Check frontend health
-curl http://localhost:8082/nginx-health
+curl http://localhost:8083/nginx-health
 
 # Check backend health
-curl http://localhost:3032/api/health
+curl http://localhost:3033/api/health
 
 # Check Registry connectivity
-curl http://localhost:3032/api/repositories/config
+curl http://localhost:3033/api/repositories/config
 ```
 
 ### Logging
@@ -276,7 +276,7 @@ For zero-downtime updates, use blue-green deployment:
 
 - [README.md](README.md) - General overview
 - [DEVELOPMENT.md](DEVELOPMENT.md) - Development setup
-- [API Documentation](http://localhost:3032/api/docs) - Interactive API docs
+- [API Documentation](http://localhost:3033/api/docs) - Interactive API docs
 
 ### Common Registry Endpoints
 

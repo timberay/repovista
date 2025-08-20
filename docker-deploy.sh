@@ -86,8 +86,8 @@ check_health() {
     print_color "Checking service health..." "$YELLOW"
     
     # Read ports from environment or use defaults
-    BACKEND_PORT=${API_PORT:-3032}
-    FRONTEND_PORT=${FRONTEND_PORT:-8082}
+    BACKEND_PORT=${API_PORT:-3033}
+    FRONTEND_PORT=${FRONTEND_PORT:-8083}
     
     # Check backend health
     if curl -f http://localhost:${BACKEND_PORT}/api/health &> /dev/null; then
@@ -151,7 +151,7 @@ case "$1" in
         echo "  stop                - Stop services"
         echo "  restart [prod]      - Restart services"
         echo "  logs [service]      - View logs (optionally specify service: backend/frontend)"
-        echo "  health              - Check service health (uses ports 3032/8082)"
+        echo "  health              - Check service health (uses ports 3033/8083)"
         echo "  clean               - Clean up Docker resources"
         echo ""
         echo "Examples:"

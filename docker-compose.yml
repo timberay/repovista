@@ -6,7 +6,7 @@ services:
     container_name: repovista-backend
     restart: unless-stopped
     ports:
-      - "${API_PORT:-3032}:8000"
+      - "${API_PORT:-3033}:8000"
     environment:
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_USERNAME=${REGISTRY_USERNAME}
@@ -38,7 +38,7 @@ services:
     container_name: repovista-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-8082}:80"
+      - "${FRONTEND_PORT:-8083}:80"
     depends_on:
       - backend
     networks:

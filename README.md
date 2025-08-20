@@ -98,9 +98,9 @@ docker-compose up -d
 ```
 
 #### 4. Access the Application
-- Frontend UI: http://localhost:8082
-- Backend API: http://localhost:3032/api
-- API Documentation: http://localhost:3032/docs
+- Frontend UI: http://localhost:8083
+- Backend API: http://localhost:3033/api
+- API Documentation: http://localhost:3033/docs
 
 #### 5. Trouble shooting
 - **docker-compose install**: 
@@ -141,13 +141,13 @@ docker-compose up -d
 | `REGISTRY_URL` | Docker Registry URL | `http://localhost:5000` |
 | `REGISTRY_USERNAME` | Registry username (if auth required) | - |
 | `REGISTRY_PASSWORD` | Registry password (if auth required) | - |
-| `API_PORT` | Backend API port (host mapping) | `3032` |
-| `FRONTEND_PORT` | Frontend port (host mapping) | `8082` |
-| `CORS_ORIGINS` | Allowed CORS origins | `["http://localhost:8082"]` |
+| `API_PORT` | Backend API port (host mapping) | `3033` |
+| `FRONTEND_PORT` | Frontend port (host mapping) | `8083` |
+| `CORS_ORIGINS` | Allowed CORS origins | `["http://localhost:8083"]` |
 
 **Note:** Port mapping in Docker:
-- Backend: Host port `3032` → Container port `8000`
-- Frontend: Host port `8082` → Container port `80`
+- Backend: Host port `3033` → Container port `8000`
+- Frontend: Host port `8083` → Container port `80`
 - Development uses `docker-compose.override.yml` for custom ports
 
 ### Connecting to Docker Registry
@@ -183,10 +183,10 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```bash
 cd frontend
 # Serve static files (using Python's built-in server)
-python -m http.server 8082
+python -m http.server 8083
 ```
 
-**Note**: The backend runs on port 8000 internally, mapped to 3032 externally via Docker. Frontend uses port 8082 to avoid conflicts.
+**Note**: The backend runs on port 8000 internally, mapped to 3033 externally via Docker. Frontend uses port 8083 to avoid conflicts.
 
 ### Running Tests
 ```bash
@@ -226,7 +226,7 @@ docker-compose build frontend
 # Start services
 ./docker-deploy.sh start
 
-# Check health (ports 3032/8082)
+# Check health (ports 3033/8083)
 ./docker-deploy.sh health
 ```
 

@@ -142,7 +142,7 @@ services:
     container_name: repovista-backend
     restart: unless-stopped
     ports:
-      - "${API_PORT:-3032}:8000"
+      - "${API_PORT:-3033}:8000"
     environment:
       - REGISTRY_URL=${REGISTRY_URL}
       - REGISTRY_USERNAME=${REGISTRY_USERNAME}
@@ -183,7 +183,7 @@ services:
     container_name: repovista-frontend
     restart: unless-stopped
     ports:
-      - "${FRONTEND_PORT:-8082}:80"
+      - "${FRONTEND_PORT:-8083}:80"
     depends_on:
       - backend
     networks:
@@ -251,13 +251,13 @@ REGISTRY_PASSWORD=your_secure_password
 
 # Service Ports
 # Modify these if the default ports are already in use
-API_PORT=3032
-FRONTEND_PORT=8082
+API_PORT=3033
+FRONTEND_PORT=8083
 
 # CORS Configuration
 # Add your domain(s) for production deployment
 # Multiple origins: http://domain1.com,https://domain2.com
-CORS_ORIGINS=http://localhost:8082
+CORS_ORIGINS=http://localhost:8083
 
 # Logging
 # Options: DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -487,8 +487,8 @@ if [ -f "${CONFIG_DIR}/.env" ]; then
 fi
 
 # Default ports if not set
-API_PORT=${API_PORT:-3032}
-FRONTEND_PORT=${FRONTEND_PORT:-8082}
+API_PORT=${API_PORT:-3033}
+FRONTEND_PORT=${FRONTEND_PORT:-8083}
 
 print_color "\nChecking RepoVista Health Status..." "$YELLOW"
 print_color "=====================================" "$YELLOW"
@@ -592,7 +592,7 @@ RepoVista is a **read-only web UI** for Docker Registry that provides an intuiti
 - Docker Compose 2.0+ (optional, for docker-compose commands)
 - Access to a Docker Registry (v2 API)
 - 2GB free disk space for images
-- Ports 3032 and 8082 available (configurable)
+- Ports 3033 and 8083 available (configurable)
 
 ## Quick Installation
 
@@ -631,8 +631,8 @@ REGISTRY_USERNAME=readonly_user
 REGISTRY_PASSWORD=secure_password
 
 # Optional: Change ports if needed
-API_PORT=3032
-FRONTEND_PORT=8082
+API_PORT=3033
+FRONTEND_PORT=8083
 \`\`\`
 
 ### Step 3: Start Services
@@ -651,9 +651,9 @@ Check service health:
 
 ## Accessing RepoVista
 
-- **Web UI**: http://localhost:8082
-- **API**: http://localhost:3032
-- **API Documentation**: http://localhost:3032/api/docs
+- **Web UI**: http://localhost:8083
+- **API**: http://localhost:3033
+- **API Documentation**: http://localhost:3033/api/docs
 
 ## Service Management
 
@@ -712,7 +712,7 @@ Check service health:
 
 ### Port Conflicts
 
-If ports 3032 or 8082 are in use, modify in \`.env\`:
+If ports 3033 or 8083 are in use, modify in \`.env\`:
 
 \`\`\`bash
 API_PORT=3033
@@ -765,7 +765,7 @@ cd ../.. && rm -rf repovista-${VERSION}
 
 For issues or questions:
 - Check the [troubleshooting section](#troubleshooting)
-- Review API documentation at http://localhost:3032/api/docs
+- Review API documentation at http://localhost:3033/api/docs
 - Verify registry compatibility (Docker Registry v2 API)
 
 ## Version Information

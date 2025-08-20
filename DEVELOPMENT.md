@@ -44,8 +44,8 @@ Use the provided development script:
 # This creates a .env.local-registry file
 cp .env.local-registry .env
 # Note: Update ports in .env if needed:
-# API_PORT=3032 (for host mapping)
-# FRONTEND_PORT=8082 (for host mapping)
+# API_PORT=3033 (for host mapping)
+# FRONTEND_PORT=8083 (for host mapping)
 ```
 
 **Note**: The local Registry is for development only. In production, RepoVista connects to an existing Registry.
@@ -80,7 +80,7 @@ pip install -r requirements-dev.txt  # Development dependencies
 
 ```bash
 # Run with auto-reload (using non-standard port to avoid conflicts)
-uvicorn backend.main:app --reload --host 0.0.0.0 --port 3032
+uvicorn backend.main:app --reload --host 0.0.0.0 --port 3033
 
 # Or use the development script
 python -m backend.main
@@ -108,16 +108,16 @@ The frontend uses vanilla JavaScript (no build step required):
 
 ```bash
 # Option 1: Use Python's built-in server (using non-standard port)
-python -m http.server 8082 --directory frontend
+python -m http.server 8083 --directory frontend
 
 # Option 2: Use Node.js http-server
-npx http-server frontend -p 8082
+npx http-server frontend -p 8083
 
 # Option 3: Use Live Server VS Code extension
-# Right-click index.html → "Open with Live Server" (configure port to 8082)
+# Right-click index.html → "Open with Live Server" (configure port to 8083)
 ```
 
-Access frontend at: http://localhost:8082
+Access frontend at: http://localhost:8083
 
 ### 5. Full Stack Development
 
@@ -157,7 +157,7 @@ flake8 backend/
 mypy backend/
 
 # 5. Test with curl
-curl http://localhost:3032/api/repositories
+curl http://localhost:3033/api/repositories
 ```
 
 ### 2. Making Frontend Changes
@@ -173,12 +173,12 @@ curl http://localhost:3032/api/repositories
 
 ```bash
 # Test backend endpoints
-curl http://localhost:3032/api/health
-curl http://localhost:3032/api/repositories
-curl http://localhost:3032/api/repositories/nginx/tags
+curl http://localhost:3033/api/health
+curl http://localhost:3033/api/repositories
+curl http://localhost:3033/api/repositories/nginx/tags
 
 # Test with authentication
-curl -u username:password http://localhost:3032/api/repositories
+curl -u username:password http://localhost:3033/api/repositories
 ```
 
 ## Project Structure
@@ -408,10 +408,10 @@ TEST_PASSWORD=testpass
 
 ```bash
 # Find process using port
-lsof -i :3032  # macOS/Linux (backend)
-lsof -i :8082  # macOS/Linux (frontend)
-netstat -ano | findstr :3032  # Windows (backend)
-netstat -ano | findstr :8082  # Windows (frontend)
+lsof -i :3033  # macOS/Linux (backend)
+lsof -i :8083  # macOS/Linux (frontend)
+netstat -ano | findstr :3033  # Windows (backend)
+netstat -ano | findstr :8083  # Windows (frontend)
 
 # Kill process
 kill -9 <PID>

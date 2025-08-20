@@ -59,7 +59,7 @@ The distribution package includes:
 - Docker 20.10+ installed and running
 - 2GB free disk space
 - Access to a Docker Registry (v2 API)
-- Ports 3032 and 8082 available (configurable)
+- Ports 3033 and 8083 available (configurable)
 
 ### Support
 

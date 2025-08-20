@@ -195,7 +195,7 @@ REGISTRY_USERNAME=
 REGISTRY_PASSWORD=
 API_PORT=8000
 FRONTEND_PORT=80
-CORS_ORIGINS=http://localhost:8082,http://localhost:3032,http://localhost
+CORS_ORIGINS=http://localhost:8083,http://localhost:3033,http://localhost
 EOF
 
 print_status "Created .env.local-registry file"
@@ -205,7 +205,7 @@ echo "  cp .env.local-registry .env"
 echo "  docker-compose up -d"
 echo ""
 print_info "Access RepoVista at:"
-echo "  Frontend: http://localhost:8082"
-echo "  Backend API: http://localhost:3032"
+echo "  Frontend: http://localhost:8083"
+echo "  Backend API: http://localhost:3033"
 echo ""
 print_status "Local registry setup complete!"
