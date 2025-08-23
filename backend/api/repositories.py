@@ -10,6 +10,7 @@ import logging
 from ..services.registry import RegistryClient, RegistryException
 from ..services.repository_service import RepositoryService, create_repository_service
 from ..services.cache import cache_service, etag_cache
+from ..services.sqlite_cache import sqlite_cache
 from ..models.schemas import (
     PaginationRequest,
     PaginationResponse, SortRequest, SearchRequest
@@ -193,6 +194,7 @@ async def list_repositories(
     page: int = Query(1, ge=1, description="Page number (1-based)"),
     page_size: int = Query(20, ge=1, le=100, description="Number of items per page"),
     include_metadata: bool = Query(False, description="Include repository metadata (tag count, last updated)"),
+    force_refresh: bool = Query(False, description="Force refresh from Docker Registry"),
     repo_service: RepositoryService = Depends(get_repository_service)
 ) -> RepositoryListResponse:
     """
@@ -205,6 +207,7 @@ async def list_repositories(
         page: Page number (1-based)
         page_size: Number of items per page (1-100)
         include_metadata: Whether to fetch repository metadata
+        force_refresh: Force refresh from Docker Registry (bypasses cache)
         repo_service: Repository service (injected)
         
     Returns:
@@ -217,77 +220,88 @@ async def list_repositories(
         # Validate pagination parameters
         validate_pagination_params(page, page_size)
         
-        # Generate cache key
-        cache_key_params = {
-            "search": search,
-            "page": page,
-            "page_size": page_size,
-            "include_metadata": include_metadata
-        }
-        cache_key = cache_service._get_cache_key("repositories", cache_key_params)
-        
-        # Check ETag support
-        client_etag = request.headers.get("if-none-match")
-        if client_etag:
-            is_valid = await etag_cache.validate_etag(cache_key, client_etag)
-            if is_valid:
-                # Return 304 Not Modified
-                response.status_code = status.HTTP_304_NOT_MODIFIED
-                return Response(status_code=status.HTTP_304_NOT_MODIFIED)
-        
-        # Check cache
-        cached_result = await cache_service.get(cache_key)
-        if cached_result is not None:
-            # Generate and set ETag for cached result
-            etag = etag_cache.generate_etag(cached_result)
-            await etag_cache.set_etag(cache_key, etag)
-            response.headers["etag"] = etag
-            response.headers["x-cache"] = "HIT"
-            response.headers["cache-control"] = "public, max-age=60"
+        # Check SQLite cache first (unless force_refresh is True)
+        if not force_refresh:
+            # Check if SQLite cache is valid
+            cache_valid = await sqlite_cache.is_cache_valid("repositories")
             
-            return RepositoryListResponse(**cached_result)
+            if cache_valid:
+                # Get data from SQLite cache
+                logger.info("Fetching repositories from SQLite cache")
+                cache_result = await sqlite_cache.get_repositories(
+                    page=page,
+                    page_size=page_size,
+                    search=search,
+                    sort_by="name",
+                    sort_order="asc"
+                )
+                
+                # Convert to response objects
+                repo_responses = []
+                for repo in cache_result["repositories"]:
+                    repo_response = RepositoryResponse(
+                        name=repo["name"],
+                        tag_count=repo.get("tag_count", 0),
+                        last_updated=datetime.fromisoformat(repo["last_updated"]) if repo.get("last_updated") else None,
+                        size_bytes=repo.get("size_bytes")
+                    )
+                    repo_responses.append(repo_response)
+                
+                result = RepositoryListResponse(
+                    repositories=repo_responses,
+                    pagination=PaginationResponse(**cache_result["pagination"])
+                )
+                
+                response.headers["x-cache"] = "SQLITE_HIT"
+                response.headers["cache-control"] = "public, max-age=60"
+                
+                return result
+        
+        # If force_refresh or cache invalid, fetch from Docker Registry
+        logger.info("Fetching repositories from Docker Registry (force_refresh={})".format(force_refresh))
         
         # Create request objects
-        search_req = SearchRequest(search=search)
-        sort_req = SortRequest(sort_by="name", sort_order="asc")  # Default sort
-        pagination_req = PaginationRequest(page=page, page_size=page_size)
+        search_req = SearchRequest(search=None)  # Don't filter at registry level, we'll handle search in cache
+        sort_req = SortRequest(sort_by="name", sort_order="asc")
+        pagination_req = PaginationRequest(page=1, page_size=100)  # Get max allowed repositories
         
-        # Use repository service for enhanced search
-        repo_data, pagination_response = await repo_service.search_and_list_repositories(
+        # Use repository service to fetch all repositories
+        repo_data, _ = await repo_service.search_and_list_repositories(
             search_req=search_req,
             sort_req=sort_req,
             pagination_req=pagination_req,
             include_metadata=include_metadata
         )
         
+        # Save all repositories to SQLite cache
+        await sqlite_cache.save_repositories(repo_data)
+        logger.info(f"Saved {len(repo_data)} repositories to SQLite cache")
+        
+        # Now get the paginated and filtered results from SQLite cache
+        cache_result = await sqlite_cache.get_repositories(
+            page=page,
+            page_size=page_size,
+            search=search,
+            sort_by="name",
+            sort_order="asc"
+        )
+        
         # Convert to response objects
         repo_responses = []
-        for repo in repo_data:
+        for repo in cache_result["repositories"]:
             repo_response = RepositoryResponse(
                 name=repo["name"],
                 tag_count=repo.get("tag_count", 0),
-                last_updated=repo.get("last_updated"),
-                size_bytes=repo.get("size_bytes"),
-                match_type=repo.get("match_type"),
-                matched_tags=repo.get("matched_tags")
+                last_updated=datetime.fromisoformat(repo["last_updated"]) if repo.get("last_updated") else None,
+                size_bytes=repo.get("size_bytes")
             )
             repo_responses.append(repo_response)
         
         result = RepositoryListResponse(
             repositories=repo_responses,
-            pagination=pagination_response
+            pagination=PaginationResponse(**cache_result["pagination"])
         )
         
-        # Cache the result - use json() then loads to properly serialize datetime objects
-        import json
-        result_json = result.json()
-        result_dict = json.loads(result_json)
-        await cache_service.set(cache_key, result_dict, ttl=60 if include_metadata else 300)
-        
-        # Generate and set ETag
-        etag = etag_cache.generate_etag(result_dict)
-        await etag_cache.set_etag(cache_key, etag)
-        response.headers["etag"] = etag
         response.headers["x-cache"] = "MISS"
         response.headers["cache-control"] = "public, max-age=60"
         

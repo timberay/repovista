@@ -51,6 +51,12 @@ htmlcov/
 .pytest_cache/
 .tox/
 
+# Database
+backend/data/
+*.db
+*.sqlite
+*.sqlite3
+
 # Distribution
 dist/*.tar.gz
 dist/*.tar.gz.*

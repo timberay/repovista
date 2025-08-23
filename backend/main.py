@@ -14,15 +14,21 @@ from typing import Dict, Any
 # Load environment variables
 load_dotenv()
 
-# Import cache service for cleanup task
+# Import cache services
 from .services.cache import cache_service, periodic_cache_cleanup
+from .services.sqlite_cache import sqlite_cache
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan - startup and shutdown"""
     # Startup
+    # Initialize SQLite cache
+    await sqlite_cache.init()
+    print("Initialized SQLite cache")
+    
+    # Start memory cache cleanup task
     cleanup_task = asyncio.create_task(periodic_cache_cleanup(60))
-    print("Started cache cleanup task")
+    print("Started memory cache cleanup task")
     
     yield
     
@@ -61,8 +67,12 @@ async def health_check() -> Dict[str, str]:
 @app.get("/api/cache/stats")
 async def cache_stats() -> Dict[str, Any]:
     """Get cache statistics"""
-    stats = await cache_service.get_stats()
-    return stats
+    memory_stats = await cache_service.get_stats()
+    sqlite_stats = await sqlite_cache.get_cache_stats()
+    return {
+        "memory_cache": memory_stats,
+        "sqlite_cache": sqlite_stats
+    }
 
 # Clear cache endpoint (for manual refresh)
 @app.post("/api/cache/clear")

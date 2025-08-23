@@ -7,7 +7,7 @@ let isLoading = false;
 let registryUrl = 'localhost:5000'; // Default registry URL
 
 // API configuration
-const API_BASE_URL = '/api';
+const API_BASE_URL = 'http://localhost:8001/api';
 
 // Utility functions
 const utils = {
@@ -92,12 +92,13 @@ const api = {
         }
     },
 
-    async fetchRepositories(page = 1, search = '') {
+    async fetchRepositories(page = 1, search = '', forceRefresh = false) {
         try {
             const params = new URLSearchParams({
                 page: page.toString(),
                 page_size: '20',
-                include_metadata: 'true'
+                include_metadata: 'true',
+                force_refresh: forceRefresh.toString()
             });
 
             if (search && search.trim()) {
@@ -354,14 +355,14 @@ const ui = {
 };
 
 // Main functions
-async function loadRepositories() {
+async function loadRepositories(forceRefresh = false) {
     if (isLoading) return;
     
     try {
         isLoading = true;
         ui.showLoading();
         
-        const response = await api.fetchRepositories(currentPage, searchTerm);
+        const response = await api.fetchRepositories(currentPage, searchTerm, forceRefresh);
         
         repositories = response.repositories || [];
         totalPages = response.pagination?.total_pages || 1;
@@ -586,7 +587,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
                 searchTerm = '';
                 currentPage = 1;
-                loadRepositories();
+                loadRepositories(true); // Pass forceRefresh=true when refresh button is clicked
             });
         }
         
@@ -602,8 +603,29 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
         }
         
-        // Search with Enter key
+        // Real-time search with debounce
         if (searchInput) {
+            // Debounced search - triggers after 500ms of no typing
+            const debouncedSearch = utils.debounce(() => {
+                if (isLoading) return;
+                
+                const newSearchTerm = searchInput.value.trim();
+                
+                // Search when 2+ characters or empty (show all)
+                if (newSearchTerm.length >= 2 || newSearchTerm === '') {
+                    // Only search if term changed
+                    if (newSearchTerm !== searchTerm) {
+                        searchTerm = newSearchTerm;
+                        currentPage = 1;
+                        loadRepositories();
+                    }
+                }
+            }, 500);
+            
+            // Add input event for real-time search
+            searchInput.addEventListener('input', debouncedSearch);
+            
+            // Search with Enter key (immediate)
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !isLoading) {
                     searchTerm = e.target.value;
