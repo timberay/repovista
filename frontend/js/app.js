@@ -7,7 +7,7 @@ let isLoading = false;
 let registryUrl = 'localhost:5000'; // Default registry URL
 
 // API configuration
-const API_BASE_URL = 'http://localhost:8001/api';
+const API_BASE_URL = 'http://localhost:3033/api';
 
 // Utility functions
 const utils = {

@@ -159,12 +159,19 @@ class SQLiteCacheService:
                 
                 # Insert new repositories
                 for repo_data in repositories_data:
+                    # Handle last_updated which might be datetime or string
+                    last_updated = repo_data.get("last_updated")
+                    if last_updated:
+                        if isinstance(last_updated, str):
+                            last_updated = datetime.fromisoformat(last_updated)
+                        elif not isinstance(last_updated, datetime):
+                            last_updated = None
+                    
                     repository = Repository(
                         name=repo_data["name"],
                         tag_count=repo_data.get("tag_count", 0),
                         size_bytes=repo_data.get("size_bytes"),
-                        last_updated=datetime.fromisoformat(repo_data["last_updated"]) 
-                            if repo_data.get("last_updated") else None,
+                        last_updated=last_updated,
                         cached_at=datetime.utcnow(),
                         extra_metadata=repo_data.get("metadata", {})
                     )
@@ -211,13 +218,20 @@ class SQLiteCacheService:
                 
                 # Insert new tags
                 for tag_data in tags_data:
+                    # Handle created which might be datetime or string
+                    created = tag_data.get("created")
+                    if created:
+                        if isinstance(created, str):
+                            created = datetime.fromisoformat(created)
+                        elif not isinstance(created, datetime):
+                            created = None
+                    
                     tag = Tag(
                         repository_name=repository_name,
                         tag=tag_data["tag"],
                         digest=tag_data.get("digest"),
                         size_bytes=tag_data.get("size_bytes"),
-                        created=datetime.fromisoformat(tag_data["created"]) 
-                            if tag_data.get("created") else None,
+                        created=created,
                         cached_at=datetime.utcnow(),
                         extra_metadata=tag_data.get("metadata", {})
                     )
