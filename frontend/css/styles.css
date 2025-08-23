@@ -209,6 +209,8 @@ body {
 .search-group {
     flex: 1;
     min-width: 300px;
+    max-width: 1000px;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     background: var(--bg-secondary);
@@ -314,6 +316,15 @@ body {
     right: 0;
     overflow-y: auto;
     overflow-x: hidden;
+}
+
+/* Content wrapper for repositories - max width 1000px */
+.repositories-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    width: 100%;
+    padding: 0;
+    transition: all 0.3s ease;
 }
 
 .loading {
@@ -839,5 +850,10 @@ tr:hover {
     
     .repositories {
         padding: 15px;
+    }
+    
+    .repositories-content {
+        max-width: 100%;
+        padding: 0;
     }
 }

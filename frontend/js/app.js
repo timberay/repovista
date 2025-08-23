@@ -175,23 +175,29 @@ const ui = {
         
         if (!repos || repos.length === 0) {
             repositoriesDiv.innerHTML = `
-                <div class="empty-state">
-                    <h3>No repositories found</h3>
-                    <p>${searchTerm ? 'Try changing your search criteria.' : 'No repositories in the registry.'}</p>
+                <div class="repositories-content">
+                    <div class="empty-state">
+                        <h3>No repositories found</h3>
+                        <p>${searchTerm ? 'Try changing your search criteria.' : 'No repositories in the registry.'}</p>
+                    </div>
                 </div>
             `;
             return;
         }
 
-        // Render all cards with staggered animation
-        repositoriesDiv.innerHTML = repos.map((repo, index) => {
-            const cardHtml = this.renderRepositoryCard(repo);
-            // Add animation delay based on index
-            return cardHtml.replace(
-                'class="repository-card"',
-                `class="repository-card" style="animation-delay: ${index * 0.1}s"`
-            );
-        }).join('');
+        // Render all cards with staggered animation, wrapped in content container
+        repositoriesDiv.innerHTML = `
+            <div class="repositories-content">
+                ${repos.map((repo, index) => {
+                    const cardHtml = this.renderRepositoryCard(repo);
+                    // Add animation delay based on index
+                    return cardHtml.replace(
+                        'class="repository-card"',
+                        `class="repository-card" style="animation-delay: ${index * 0.1}s"`
+                    );
+                }).join('')}
+            </div>
+        `;
         
         // Update pagination
         this.renderPagination(pagination);
