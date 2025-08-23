@@ -309,21 +309,31 @@ const ui = {
         
         if (!paginationDiv || !pageNumbersDiv) return;
         
-        if (!pagination || pagination.total_pages <= 1) {
-            paginationDiv.style.display = 'none';
-            return;
-        }
-
+        // Always show pagination
         paginationDiv.style.display = 'flex';
+        
+        // Set default values if pagination data is missing
+        const currentPage = pagination?.page || 1;
+        const totalPages = pagination?.total_pages || 1;
         
         // Generate page numbers
         let pageNumbers = '';
-        const startPage = Math.max(1, pagination.page - 2);
-        const endPage = Math.min(pagination.total_pages, pagination.page + 2);
+        
+        if (!pagination || totalPages === 0) {
+            // Show page 1 as disabled when no data
+            pageNumbers = '<button class="page-btn active" disabled>1</button>';
+        } else if (totalPages === 1) {
+            // Show single page as active
+            pageNumbers = '<button class="page-btn active">1</button>';
+        } else {
+            // Multiple pages - existing logic
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
 
-        for (let i = startPage; i <= endPage; i++) {
-            const activeClass = i === pagination.page ? 'active' : '';
-            pageNumbers += `<button class="page-btn ${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+            for (let i = startPage; i <= endPage; i++) {
+                const activeClass = i === currentPage ? 'active' : '';
+                pageNumbers += `<button class="page-btn ${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+            }
         }
 
         pageNumbersDiv.innerHTML = pageNumbers;
@@ -332,8 +342,14 @@ const ui = {
         const prevBtn = document.getElementById('prev-page');
         const nextBtn = document.getElementById('next-page');
         
-        if (prevBtn) prevBtn.disabled = pagination.page <= 1;
-        if (nextBtn) nextBtn.disabled = pagination.page >= pagination.total_pages;
+        if (prevBtn) {
+            // Disable prev button on first page or when no data
+            prevBtn.disabled = currentPage <= 1 || !pagination || totalPages === 0;
+        }
+        if (nextBtn) {
+            // Disable next button on last page or when no data
+            nextBtn.disabled = currentPage >= totalPages || !pagination || totalPages === 0;
+        }
     }
 };
 
@@ -487,14 +503,10 @@ const themeManager = {
     
     // Update theme toggle button icons and text
     updateThemeButtons(theme) {
-        const themeIcon = document.getElementById('theme-icon');
         const themeIconInline = document.getElementById('theme-icon-inline');
         const themeText = document.getElementById('theme-text');
         
         if (theme === 'dark') {
-            if (themeIcon) {
-                themeIcon.className = 'fas fa-sun';
-            }
             if (themeIconInline) {
                 themeIconInline.className = 'fas fa-sun';
             }
@@ -502,9 +514,6 @@ const themeManager = {
                 themeText.textContent = 'Light';
             }
         } else {
-            if (themeIcon) {
-                themeIcon.className = 'fas fa-moon';
-            }
             if (themeIconInline) {
                 themeIconInline.className = 'fas fa-moon';
             }
@@ -529,13 +538,8 @@ const themeManager = {
         const theme = this.getCurrentTheme();
         this.applyTheme(theme);
         
-        // Add theme toggle event listeners
-        const themeToggle = document.getElementById('theme-toggle');
+        // Add theme toggle event listener
         const themeToggleInline = document.getElementById('theme-toggle-inline');
-        
-        if (themeToggle) {
-            themeToggle.addEventListener('click', () => this.toggleTheme());
-        }
         
         if (themeToggleInline) {
             themeToggleInline.addEventListener('click', () => this.toggleTheme());
@@ -558,6 +562,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Initialize theme
         themeManager.init();
+        
+        // Initialize pagination display (show default state)
+        ui.renderPagination(null);
         
         // First fetch registry configuration
         await api.fetchRegistryConfig();

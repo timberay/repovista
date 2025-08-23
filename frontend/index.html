@@ -9,11 +9,11 @@
     <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
-    <div class="container">
+    <div class="container-fluid">
         <div class="header">
-            <h1><span class="docker-icon">🐳</span>Docker Registry Web UI.</h1>
+            <h2><span class="docker-icon">🐳</span>Docker Registry Web UI.</h2>
             <h4><em>repovista &copy; 2025. timberay</em></h4>
-            <button class="theme-toggle-inline" id="theme-toggle-inline" aria-label="Toggle dark mode">
+            <button class="theme-toggle-inline" id="theme-toggle-inline" aria-label="Toggle dark mode" title="Click to change theme">
                 <i class="fas fa-moon" id="theme-icon-inline"></i>
                 <span id="theme-text">Dark</span>
             </button>
@@ -38,17 +38,13 @@
             </div>
         </div>
 
-        <div class="pagination" id="pagination" style="display: none;">
+        <div class="pagination" id="pagination">
             <button class="page-btn" id="prev-page">◀</button>
             <div id="page-numbers"></div>
             <button class="page-btn" id="next-page">▶</button>
         </div>
     </div>
 
-    <!-- Floating theme toggle button -->
-    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle dark mode">
-        <i class="fas fa-moon" id="theme-icon"></i>
-    </button>
 
     <script src="js/app.js"></script>
 </body>
