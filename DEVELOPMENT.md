@@ -50,7 +50,7 @@ cp .env.local-registry .env
 
 **Note**: The local Registry is for development only. In production, RepoVista connects to an existing Registry.
 
-#### Option C: Use Mock Data
+#### Option C: Use Mock Data (Development/Testing)
 
 Enable mock data mode (no Registry required):
 
@@ -59,6 +59,12 @@ cp .env.example .env
 # Edit .env and set:
 USE_MOCK_DATA=true
 ```
+
+This mode provides realistic mock data for:
+- 50+ sample repositories
+- Multiple tags per repository
+- Realistic size and date information
+- Perfect for UI development and testing
 
 ### 3. Backend Development
 
@@ -82,8 +88,14 @@ pip install -r requirements-dev.txt  # Development dependencies
 # Run with auto-reload (using non-standard port to avoid conflicts)
 uvicorn backend.main:app --reload --host 0.0.0.0 --port 3033
 
+# Run with mock data mode
+USE_MOCK_DATA=true uvicorn backend.main:app --reload --host 0.0.0.0 --port 3033
+
 # Or use the development script
 python -m backend.main
+
+# Enable debug logging
+LOG_LEVEL=DEBUG uvicorn backend.main:app --reload --host 0.0.0.0 --port 3033
 ```
 
 #### Run Tests
@@ -191,25 +203,44 @@ repovista/
 │   │   └── tags.py        # Tag endpoints
 │   ├── services/           # Business logic
 │   │   ├── registry.py    # Registry client
-│   │   └── cache.py       # Caching service
+│   │   ├── mock_registry.py # Mock data provider
+│   │   ├── repository_service.py # Business logic
+│   │   ├── sqlite_cache.py # SQLite caching
+│   │   └── cache.py       # Cache interface
 │   ├── models/             # Data models
-│   │   └── schemas.py     # Pydantic schemas
+│   │   ├── schemas.py     # Pydantic schemas
+│   │   └── database.py    # Database models
+│   ├── utils/              # Utility functions
+│   │   ├── pagination.py  # Pagination helpers
+│   │   ├── search.py      # Search functionality
+│   │   └── sorting.py     # Sorting utilities
 │   ├── config.py          # Configuration
 │   └── main.py            # Application entry
 ├── frontend/               # Vanilla JS frontend
 │   ├── index.html         # Main HTML
 │   ├── css/               # Stylesheets
-│   │   └── styles.css     # Main styles
+│   │   └── styles.css     # Main styles (with dark mode)
 │   ├── js/                # JavaScript
-│   │   └── app.js         # Main application
+│   │   └── app.js         # Main application (all-in-one)
+│   ├── components/        # Component templates
 │   └── assets/            # Static assets
-├── tests/                  # Test files
+├── e2e-tests/              # Playwright E2E tests
+│   ├── repository-listing.spec.js
+│   ├── tag-details.spec.js
+│   ├── search-filter.spec.js
+│   ├── pagination.spec.js
+│   ├── sorting.spec.js
+│   └── cross-browser.spec.js
+├── performance-tests/      # Performance testing
+│   └── load-test.js       # Load testing script
+├── tests/                  # Unit tests
 │   ├── conftest.py        # Test fixtures
-│   ├── test_*.py          # Test modules
-│   └── mocks/             # Mock data
+│   └── test_*.py          # Test modules
 ├── dev-tools/              # Development utilities
 │   └── setup-local-registry.sh
 ├── docker-compose.yml      # Docker composition
+├── playwright.config.js    # Playwright config
+├── package.json           # Node dependencies
 ├── requirements.txt        # Python dependencies
 └── .env.example           # Environment template
 ```
@@ -289,29 +320,47 @@ pytest -m "not integration"
 ### E2E Tests
 
 ```bash
-# Install Playwright
+# Install Playwright and dependencies
 npm install
+npx playwright install  # Install browser binaries
 
-# Run E2E tests
+# Run all E2E tests
 npx playwright test
 
-# Run with UI
+# Run with UI (interactive mode)
 npx playwright test --ui
+
+# Run specific test file
+npx playwright test e2e-tests/repository-listing.spec.js
 
 # Run specific browser
 npx playwright test --project=chromium
+npx playwright test --project=firefox
+npx playwright test --project=webkit
+
+# Run in headed mode (see browser)
+npx playwright test --headed
+
+# Generate test report
+npx playwright test --reporter=html
+npx playwright show-report
 ```
 
 ### Manual Testing Checklist
 
 - [ ] Repository list loads correctly
-- [ ] Search functionality works
-- [ ] Pagination works
+- [ ] Search functionality works (real-time filtering)
+- [ ] Pagination works (20/50/100 items per page)
+- [ ] Sorting works (name/date, asc/desc)
 - [ ] Tag expansion shows correct data
-- [ ] Copy buttons work
-- [ ] Dark mode toggle works
+- [ ] Copy buttons work for pull commands
+- [ ] Dark mode toggle works and persists
+- [ ] Theme follows system preference
 - [ ] Error states display correctly
 - [ ] Loading states show appropriately
+- [ ] Mock data mode works (USE_MOCK_DATA=true)
+- [ ] SQLite cache is created and used
+- [ ] Cross-browser compatibility (Chrome, Firefox, Safari, Edge)
 
 ## Debugging
 
@@ -339,7 +388,14 @@ console.log('Debug info:', data);
 debugger;  // Breakpoint
 
 // Check network tab for API calls
-// Use React DevTools for component inspection
+// Check Application tab for localStorage (theme preference)
+// Use Console for JavaScript errors
+// Use Elements tab to inspect DOM and CSS
+
+// Dark mode debugging
+localStorage.getItem('theme');  // Check current theme
+localStorage.setItem('theme', 'dark');  // Force dark mode
+localStorage.setItem('theme', 'light');  // Force light mode
 ```
 
 ### Docker Debugging
@@ -362,12 +418,18 @@ docker inspect repovista-backend
 ### Load Testing
 
 ```bash
-# Install k6
-brew install k6  # macOS
-# or download from https://k6.io
+# Run load test with Node.js (no k6 required)
+node performance-tests/load-test.js
 
-# Run load test
-k6 run performance-tests/load-test.js
+# The test simulates:
+# - Concurrent users (default: 10)
+# - Multiple requests per user
+# - Repository listing and tag fetching
+# - Reports response times and success rates
+
+# Custom parameters:
+CONCURRENT_USERS=20 node performance-tests/load-test.js
+REQUESTS_PER_USER=50 node performance-tests/load-test.js
 ```
 
 ### Browser Performance
@@ -382,12 +444,24 @@ k6 run performance-tests/load-test.js
 ### Development Variables
 
 ```bash
+# Core settings
+API_PORT=3033                      # Backend API port
+FRONTEND_PORT=8083                 # Frontend server port
+REGISTRY_URL=http://localhost:5000 # Registry URL
+REGISTRY_USERNAME=readonly_user    # Registry username
+REGISTRY_PASSWORD=secure_password  # Registry password
+
 # Development-specific settings
 LOG_LEVEL=DEBUG                    # Verbose logging
 USE_MOCK_DATA=false                # Use mock data instead of Registry
 RELOAD=true                        # Auto-reload on changes
-CACHE_TTL_REPOSITORIES=60          # Shorter cache for development
-CACHE_TTL_TAGS=60                  # Shorter cache for development
+
+# Cache settings
+CACHE_TTL=300                      # Cache TTL in seconds (5 minutes)
+CACHE_DB_PATH=./cache.db           # SQLite cache database path
+
+# CORS settings
+CORS_ORIGINS=http://localhost:8083,http://localhost:8080
 ```
 
 ### Test Variables
