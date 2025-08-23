@@ -45,7 +45,7 @@ Edit `.env` file with your Registry details:
 
 ```bash
 # Your existing Docker Registry URL
-REGISTRY_URL=https://registry.your-company.com
+REGISTRY_URL=http://registry.your-company.com:5000
 
 # Authentication (if required)
 REGISTRY_USERNAME=readonly_user

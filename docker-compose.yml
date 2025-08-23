@@ -19,6 +19,7 @@ services:
     volumes:
       - backend-logs:/app/logs
       - backend-cache:/app/.cache
+      - backend-data:/app/backend/data
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/health')"]
       interval: 30s
@@ -71,6 +72,8 @@ volumes:
   backend-logs:
     driver: local
   backend-cache:
+    driver: local
+  backend-data:
     driver: local
   nginx-logs:
     driver: local

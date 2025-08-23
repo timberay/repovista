@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-VERSION="${1:-v1.0.0}"
+VERSION="${1:-v1.0.1}"
 DIST_DIR="dist"
 PACKAGE_NAME="repovista-${VERSION}"
 PACKAGE_DIR="${DIST_DIR}/${PACKAGE_NAME}"
@@ -134,8 +134,6 @@ create_config_files() {
     
     # Create docker-compose.yml for production (using images)
     cat > ${PACKAGE_DIR}/config/docker-compose.yml << 'EOF'
-version: '3.8'
-
 services:
   backend:
     image: repovista-backend:VERSION_PLACEHOLDER
@@ -158,6 +156,7 @@ services:
     volumes:
       - backend-logs:/app/logs
       - backend-cache:/app/.cache
+      - backend-data:/app/backend/data
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8000/api/health')"]
       interval: 30s
@@ -225,6 +224,8 @@ volumes:
     driver: local
   backend-cache:
     driver: local
+  backend-data:
+    driver: local
   nginx-logs:
     driver: local
   nginx-cache:
@@ -242,7 +243,7 @@ EOF
 
 # Docker Registry Configuration
 # Your existing Docker Registry URL (required)
-REGISTRY_URL=https://registry.example.com
+REGISTRY_URL=http://registry.example.com:5000
 
 # Registry Authentication (optional)
 # Create a read-only user in your registry for RepoVista
@@ -264,11 +265,20 @@ CORS_ORIGINS=http://localhost:8083
 LOG_LEVEL=INFO
 
 # Cache Settings (optional)
-# Cache TTL in seconds (default: 300)
+# Memory cache TTL in seconds (default: 300)
 CACHE_TTL=300
 
-# Max items in cache (default: 1000)
+# Max items in memory cache (default: 1000)
 CACHE_MAX_SIZE=1000
+
+# SQLite Cache Settings (optional)
+# Cache TTL in hours for SQLite cache (default: 24)
+# This determines how long data is cached before refresh is needed
+SQLITE_CACHE_TTL_HOURS=24
+
+# Force refresh bypasses SQLite cache when refresh button is clicked
+# This is controlled automatically by the UI refresh button
+# FORCE_REFRESH=false
 
 # Performance Tuning (optional)
 # Number of worker processes for backend
@@ -505,6 +515,17 @@ if curl -f -s http://localhost:${API_PORT}/api/health > /dev/null 2>&1; then
     else
         print_color "⚠️  Not configured or unreachable" "$YELLOW"
     fi
+    
+    # Check cache status
+    echo -n "SQLite Cache: "
+    CACHE_STATUS=$(curl -f -s http://localhost:${API_PORT}/api/cache/stats 2>/dev/null | grep -o '"cache_valid":[^,}]*' | cut -d':' -f2)
+    if [ "$CACHE_STATUS" = "true" ]; then
+        print_color "✅ Valid" "$GREEN"
+    elif [ "$CACHE_STATUS" = "false" ]; then
+        print_color "⚠️  Expired (will refresh on next request)" "$YELLOW"
+    else
+        print_color "⚠️  Not initialized" "$YELLOW"
+    fi
 else
     print_color "❌ Unhealthy or not running" "$RED"
 fi
@@ -584,7 +605,7 @@ create_documentation() {
 
 ## Overview
 
-RepoVista is a **read-only web UI** for Docker Registry that provides an intuitive interface to browse and manage Docker images.
+RepoVista is a **read-only web UI** for Docker Registry that provides an intuitive interface to browse and manage Docker images. It features SQLite caching for improved performance and reduced registry API calls.
 
 ## Prerequisites
 
@@ -736,6 +757,20 @@ cd config
 docker-compose down -v
 docker-compose up -d
 \`\`\`
+
+## Caching System
+
+RepoVista uses a two-tier caching system for optimal performance:
+
+1. **SQLite Cache**: Persistent storage with 24-hour TTL (configurable)
+   - Stores repository and tag information
+   - Reduces Docker Registry API calls
+   - Data persists across container restarts
+   - Refresh button forces cache update
+
+2. **Memory Cache**: Fast in-memory caching for frequently accessed data
+   - 5-minute TTL for API responses
+   - Automatic cleanup of expired entries
 
 ## Security Notes
 

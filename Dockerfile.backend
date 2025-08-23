@@ -24,9 +24,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     PATH=/home/appuser/.local/bin:$PATH
 
-# Create non-root user
+# Create non-root user and necessary directories
 RUN useradd -m -u 1000 appuser && \
-    mkdir -p /app && \
+    mkdir -p /app/backend/data && \
     chown -R appuser:appuser /app
 
 # Set working directory

@@ -1,18 +1,18 @@
-RepoVista v1.0.0 - Docker Registry Web UI
+RepoVista v1.0.1 - Docker Registry Web UI
 ============================================
 
 This package contains a pre-built, production-ready deployment of RepoVista.
 
 CONTENTS:
-- repovista-v1.0.0.tar.gz : Main deployment package
-- repovista-v1.0.0.tar.gz.sha256 : Checksum file
+- repovista-v1.0.1.tar.gz : Main deployment package
+- repovista-v1.0.1.tar.gz.sha256 : Checksum file
 
 INSTALLATION:
 1. Extract the package:
-   tar -xzf repovista-v1.0.0.tar.gz
+   tar -xzf repovista-v1.0.1.tar.gz
 
 2. Navigate to extracted directory:
-   cd repovista-v1.0.0
+   cd repovista-v1.0.1
 
 3. Run quick installation:
    ./scripts/quick-install.sh
@@ -26,5 +26,5 @@ REQUIREMENTS:
 
 For detailed instructions, see INSTALL.md after extraction.
 
-Version: v1.0.0
-Build Date: 2025-08-18
+Version: v1.0.1
+Build Date: 2025-08-23
