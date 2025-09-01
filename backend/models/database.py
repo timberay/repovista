@@ -124,9 +124,15 @@ class DatabaseManager:
             expire_on_commit=False
         )
         
-        # Create tables
+        # Create tables if they don't exist
+        # Using checkfirst=True to avoid errors when tables already exist
         async with self.engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
+            # Check if tables exist first
+            def create_tables(connection):
+                # This will only create tables that don't already exist
+                Base.metadata.create_all(bind=connection, checkfirst=True)
+            
+            await conn.run_sync(create_tables)
     
     async def get_session(self) -> AsyncSession:
         """Get async database session"""
