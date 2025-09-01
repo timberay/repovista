@@ -36,7 +36,7 @@ class RepositoryResponse(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat() if v else None
         }
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "name": "nginx",
                 "tag_count": 15,
@@ -57,7 +57,7 @@ class RepositoryListResponse(BaseModel):
         json_encoders = {
             datetime: lambda v: v.isoformat() if v else None
         }
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "repositories": [
                     {
@@ -95,7 +95,7 @@ class ErrorResponse(BaseModel):
     details: Optional[Dict[str, Any]] = Field(None, description="Additional error details")
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {
             "example": {
                 "error": "RegistryAuthError",
                 "message": "Authentication required",
