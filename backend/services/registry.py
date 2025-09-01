@@ -7,6 +7,7 @@ including authentication, repository listing, and tag management.
 
 import asyncio
 import base64
+import datetime
 import json
 import logging
 import time
@@ -19,7 +20,7 @@ from httpx import AsyncClient, Response
 from ..models.schemas import (
     AuthChallenge, BearerToken, RepositoryCatalog, TagsList, 
     ManifestV2, ImageInfo, RepositoryInfo, PaginationInfo,
-    RegistryErrorResponse, RegistryError
+    RegistryErrorResponse
 )
 
 # Setup logger
@@ -751,9 +752,9 @@ class RegistryClient:
             
         elif isinstance(exception, RegistryNotFoundError):
             if "repository" in context.lower():
-                return f"Repository not found. Please verify the repository name is correct."
+                return "Repository not found. Please verify the repository name is correct."
             elif "tag" in context.lower():
-                return f"Tag not found. The specified tag may not exist in this repository."
+                return "Tag not found. The specified tag may not exist in this repository."
             elif context:
                 return f"Resource not found while {context}."
             return "The requested resource was not found."
@@ -870,7 +871,7 @@ class RegistryClient:
         
         return delay + jitter
     
-    def _parse_datetime(self, datetime_str: str) -> Optional['datetime']:
+    def _parse_datetime(self, datetime_str: str) -> Optional[datetime.datetime]:
         """
         Parse datetime string from various Docker Registry formats
         
@@ -1211,7 +1212,6 @@ class RegistryClient:
                 # Prepare for next page
                 if next_url:
                     # Parse next URL for parameters
-                    from urllib.parse import urlparse, parse_qs
                     parsed = urlparse(next_url)
                     next_params = parse_qs(parsed.query)
                     

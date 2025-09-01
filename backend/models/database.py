@@ -2,13 +2,12 @@
 SQLite database models for RepoVista cache
 """
 from datetime import datetime
-from typing import Optional
 from sqlalchemy import (
-    create_engine, Column, Integer, String, DateTime, 
+    Column, Integer, String, DateTime, 
     JSON, ForeignKey, BigInteger, Index, UniqueConstraint
 )
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, relationship
+from sqlalchemy.orm import relationship
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
 
 Base = declarative_base()

@@ -2,6 +2,7 @@
 let currentPage = 1;
 let totalPages = 1;
 let repositories = [];
+let allRepositories = []; // Complete unfiltered list for tree display
 let searchTerm = '';
 let isLoading = false;
 let registryUrl = 'localhost:5000'; // Default registry URL
@@ -360,6 +361,139 @@ const ui = {
     }
 };
 
+// Registry tree builder and renderer
+const registryTree = {
+    treeData: null,
+    
+    // Build tree from repositories data with optional search highlighting
+    buildTree(repositories, searchTerm = '') {
+        const root = { 
+            name: 'Registries', 
+            children: {}, 
+            expanded: true,
+            isRoot: true 
+        };
+        
+        const searchLower = searchTerm.toLowerCase();
+        
+        repositories.forEach(repo => {
+            const parts = repo.name.split('/');
+            let current = root;
+            
+            // Check if this repository matches the search term
+            const isMatched = searchTerm && repo.name.toLowerCase().includes(searchLower);
+            
+            // Build path nodes
+            parts.forEach((part, index) => {
+                if (!current.children[part]) {
+                    const fullPath = parts.slice(0, index + 1).join('/');
+                    current.children[part] = {
+                        name: part,
+                        path: fullPath,
+                        children: {},
+                        expanded: false,
+                        isRepo: index === parts.length - 1,
+                        repoData: index === parts.length - 1 ? repo : null,
+                        isHighlighted: isMatched && index === parts.length - 1 // Highlight matching repos
+                    };
+                }
+                current = current.children[part];
+            });
+        });
+        
+        this.treeData = root;
+        return root;
+    },
+    
+    // Toggle node expansion
+    toggleNode(element, event) {
+        if (event) {
+            event.stopPropagation(); // Prevent triggering parent click handlers
+        }
+        
+        const nodeDiv = element.closest('.tree-node');
+        const childrenDiv = nodeDiv.querySelector(':scope > .tree-children');
+        const expandIcon = nodeDiv.querySelector('.tree-expand-icon');
+        
+        if (childrenDiv) {
+            const isExpanded = !childrenDiv.classList.contains('collapsed');
+            if (isExpanded) {
+                childrenDiv.classList.add('collapsed');
+                expandIcon.textContent = '▶';
+            } else {
+                childrenDiv.classList.remove('collapsed');
+                expandIcon.textContent = '▼';
+            }
+        }
+    },
+    
+    // Search by repository when clicking on tree node name
+    searchByRepository(repoPath, event) {
+        if (event) {
+            event.stopPropagation(); // Prevent triggering parent click handlers
+        }
+        
+        // Update search input field
+        const searchInput = document.getElementById('search-input');
+        if (searchInput) {
+            searchInput.value = repoPath;
+        }
+        
+        // Update global search term and trigger search
+        searchTerm = repoPath;
+        currentPage = 1;
+        loadRepositories();
+    }
+};
+
+// Tree renderer
+const treeRenderer = {
+    renderTree(node, level = 0) {
+        if (level === 0) {
+            return `<div class="tree-root">${this.renderNode(node, level)}</div>`;
+        }
+        return this.renderNode(node, level);
+    },
+    
+    renderNode(node, level) {
+        const hasChildren = Object.keys(node.children).length > 0;
+        // Repository nodes don't have expand icon since they don't have children
+        const expandIcon = hasChildren && !node.isRepo ? (node.expanded ? '▼' : '▶') : '';
+        const nodeClass = node.isRepo ? 'repo-node' : (node.isRoot ? 'root-node' : 'path-node');
+        const highlightClass = node.isHighlighted ? 'tree-node-highlighted' : '';
+        const icon = node.isRepo ? '📦' : (node.isRoot ? '🌐' : '📁');
+        
+        // Determine if this node should be clickable for search
+        const isSearchable = node.isRepo || (node.path && !node.isRoot);
+        
+        let html = `
+            <div class="tree-node ${nodeClass} ${highlightClass}" data-level="${level}" data-path="${node.path || ''}" data-is-repo="${node.isRepo || false}">
+                <div class="tree-node-content">
+                    <span class="tree-indent" style="width: ${level * 20}px"></span>
+                    ${hasChildren && !node.isRepo ? `
+                        <span class="tree-expand-icon" onclick="registryTree.toggleNode(this, event)">${expandIcon}</span>
+                    ` : '<span class="tree-expand-icon-placeholder"></span>'}
+                    <span class="tree-icon">${icon}</span>
+                    <span class="tree-label ${isSearchable ? 'tree-label-clickable' : ''} ${node.isHighlighted ? 'tree-label-highlighted' : ''}" 
+                          ${isSearchable ? `onclick="registryTree.searchByRepository('${node.path || node.name}', event)"` : ''}>
+                        ${utils.escapeHtml(node.name)}
+                    </span>
+                    ${node.isRepo && node.repoData ? `<span class="tree-badge">${node.repoData.tag_count || 0} tags</span>` : ''}
+                </div>
+                ${hasChildren && !node.isRepo ? `
+                    <div class="tree-children ${node.expanded ? '' : 'collapsed'}">
+                        ${Object.values(node.children).map(child => 
+                            this.renderNode(child, level + 1)
+                        ).join('')}
+                    </div>
+                ` : ''}
+            </div>
+        `;
+        
+        return html;
+    }
+};
+
 // Main functions
 async function loadRepositories(forceRefresh = false) {
     if (isLoading) return;
@@ -373,7 +507,53 @@ async function loadRepositories(forceRefresh = false) {
         repositories = response.repositories || [];
         totalPages = response.pagination?.total_pages || 1;
         
+        // Always ensure we have allRepositories for the tree
+        // Fetch it once on initial load or when refreshing
+        if (allRepositories.length === 0 || forceRefresh || !searchTerm) {
+            // Fetch all repositories for the tree (use reasonable page_size)
+            const params = new URLSearchParams({
+                page: '1',
+                page_size: '100', // Use reasonable limit that backend supports
+                include_metadata: 'true',
+                force_refresh: forceRefresh.toString()
+            });
+            
+            console.log('Fetching all repositories for tree...');
+            const allReposResponse = await fetch(`${API_BASE_URL}/repositories/?${params}`);
+            if (allReposResponse.ok) {
+                const data = await allReposResponse.json();
+                allRepositories = data.repositories || [];
+                console.log('Fetched all repositories:', allRepositories.length, 'items');
+            } else {
+                console.error('Failed to fetch all repositories:', allReposResponse.status);
+                // Fallback to using current repositories if fetch fails
+                if (!searchTerm) {
+                    allRepositories = repositories;
+                }
+            }
+        }
+        
         ui.renderRepositories(repositories, response.pagination);
+        
+        // Build tree from complete list, not filtered results
+        console.log('Building tree with allRepositories:', allRepositories.length, 'items');
+        const treeData = registryTree.buildTree(allRepositories, searchTerm);
+        const treeContainer = document.querySelector('.registries-tree .tree-container');
+        if (!treeContainer) {
+            const mainTreeContainer = document.querySelector('.registries-tree');
+            if (mainTreeContainer) {
+                // Tree container might not exist yet, ensure it's there
+                mainTreeContainer.innerHTML = `
+                    <h3>Registry Navigation</h3>
+                    <div class="tree-container">
+                        ${treeRenderer.renderTree(treeData)}
+                    </div>
+                `;
+            }
+        } else {
+            // Update existing tree container
+            treeContainer.innerHTML = treeRenderer.renderTree(treeData);
+        }
         
     } catch (error) {
         console.error('Failed to load repositories:', error);
@@ -576,8 +756,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         // First fetch registry configuration
         await api.fetchRegistryConfig();
         
-        // Initial load
-        loadRepositories();
+        // Initial load - await it to ensure tree is populated
+        console.log('Starting initial repository load...');
+        await loadRepositories();
+        console.log('Initial repository load complete');
 
         // Setup search events
         const searchInput = document.getElementById('search-input');
@@ -663,9 +845,92 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 });
 
+// Sidebar toggle functionality
+const sidebarToggle = {
+    isVisible: true,
+    
+    init() {
+        const toggleBtn = document.getElementById('sidebar-toggle');
+        const sidebar = document.querySelector('.registries-tree');
+        const mainBody = document.querySelector('.registries-body');
+        const mainContent = document.querySelector('.main-content');
+        
+        if (!toggleBtn || !sidebar || !mainBody || !mainContent) {
+            console.error('Sidebar toggle elements not found');
+            return;
+        }
+        
+        // Load saved state from localStorage
+        const savedState = localStorage.getItem('sidebarVisible');
+        if (savedState !== null) {
+            this.isVisible = savedState === 'true';
+            this.updateUI(toggleBtn, sidebar, mainBody, mainContent, false);
+        }
+        
+        // Add click event listener
+        toggleBtn.addEventListener('click', () => {
+            this.toggle(toggleBtn, sidebar, mainBody, mainContent);
+        });
+        
+        // Add keyboard shortcut (Ctrl+B or Cmd+B)
+        document.addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
+                e.preventDefault();
+                this.toggle(toggleBtn, sidebar, mainBody, mainContent);
+            }
+        });
+    },
+    
+    toggle(toggleBtn, sidebar, mainBody, mainContent) {
+        this.isVisible = !this.isVisible;
+        this.updateUI(toggleBtn, sidebar, mainBody, mainContent, true);
+        
+        // Save state to localStorage
+        localStorage.setItem('sidebarVisible', this.isVisible.toString());
+    },
+    
+    updateUI(toggleBtn, sidebar, mainBody, mainContent, animate = true) {
+        if (this.isVisible) {
+            sidebar.classList.remove('collapsed');
+            mainBody.classList.remove('full-width');
+            mainContent.classList.remove('sidebar-hidden');
+            toggleBtn.classList.remove('active');
+            toggleBtn.setAttribute('aria-expanded', 'true');
+        } else {
+            sidebar.classList.add('collapsed');
+            mainBody.classList.add('full-width');
+            mainContent.classList.add('sidebar-hidden');
+            toggleBtn.classList.add('active');
+            toggleBtn.setAttribute('aria-expanded', 'false');
+        }
+        
+        // Add animation class if needed
+        if (animate) {
+            sidebar.style.transition = 'width 0.3s ease, transform 0.3s ease, opacity 0.3s ease';
+            mainBody.style.transition = 'width 0.3s ease';
+        } else {
+            // Remove transition for initial load
+            sidebar.style.transition = 'none';
+            mainBody.style.transition = 'none';
+            
+            // Re-enable transitions after a delay
+            setTimeout(() => {
+                sidebar.style.transition = '';
+                mainBody.style.transition = '';
+            }, 100);
+        }
+    }
+};
+
+// Initialize sidebar toggle on page load
+document.addEventListener('DOMContentLoaded', () => {
+    sidebarToggle.init();
+});
+
 // Export as global functions
 window.loadRepositories = loadRepositories;
 window.toggleExpand = toggleExpand;
 window.goToPage = goToPage;
 window.copyPullCommand = copyPullCommand;
 window.copyImageId = copyImageId;
+window.sidebarToggle = sidebarToggle;

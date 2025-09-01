@@ -190,12 +190,10 @@ body {
 
 .controls {
     display: flex;
-    gap: 15px;
-    padding: 25px;
+    justify-content: center;
+    padding: 0;
     background: var(--bg-tertiary);
     border-bottom: 1px solid var(--border-primary);
-    flex-wrap: wrap;
-    align-items: center;
     position: fixed;
     top: var(--header-height);
     left: 0;
@@ -206,10 +204,20 @@ body {
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+.controls-wrapper {
+    display: flex;
+    gap: 15px;
+    padding: 25px;
+    width: 100%;
+    max-width: 1600px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
 .search-group {
     flex: 1;
     min-width: 300px;
-    max-width: 1200px;
+    max-width: 1600px;
     margin: 0 auto;
     display: flex;
     align-items: center;
@@ -307,21 +315,285 @@ body {
     transform: none;
 }
 
-.repositories {
-    padding: 20px;
+/* Sidebar toggle button */
+.sidebar-toggle {
+    padding: 12px 16px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-secondary);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    min-width: 48px;
+}
+
+.sidebar-toggle:hover {
+    background: var(--btn-primary);
+    color: var(--text-header);
+    border-color: var(--btn-primary);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+}
+
+.sidebar-toggle i {
+    transition: transform 0.3s ease;
+}
+
+.sidebar-toggle.active i {
+    transform: rotate(90deg);
+}
+
+/* Two-column layout container */
+.main-content {
+    display: flex;
     position: absolute;
     top: calc(var(--header-height) + var(--controls-height));
     bottom: var(--pagination-height);
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100%;
+    max-width: 1600px;
+    gap: 20px;
+    padding: 20px;
+    overflow: hidden;
+}
+
+/* Left sidebar - Registry tree (1/4 width) */
+.registries-tree {
+    width: 25%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
+    padding: 20px;
+    overflow-y: auto;
+    box-shadow: var(--shadow-sm);
+    transition: width 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
+    transform-origin: left;
+}
+
+/* Sidebar collapsed state */
+.registries-tree.collapsed {
+    display: none;
+}
+
+/* Remove gap when sidebar is hidden */
+.main-content.sidebar-hidden {
+    gap: 0;
+}
+
+.registries-tree:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.registries-tree h3 {
+    color: var(--text-primary);
+    margin-bottom: 15px;
+    font-size: 1.1em;
+    font-weight: 500;
+}
+
+/* Tree view styles */
+.tree-container {
+    font-family: 'Roboto Mono', monospace;
+    font-size: 13px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    max-height: calc(100vh - 260px);
+    padding: 5px 0;
+}
+
+.tree-root {
+    padding: 0;
+}
+
+.tree-node {
+    user-select: none;
+    white-space: nowrap;
+}
+
+.tree-node-content {
+    display: flex;
+    align-items: center;
+    padding: 3px 8px;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+    min-height: 24px;
+}
+
+.tree-node-content:hover {
+    background-color: var(--bg-hover);
+}
+
+.tree-indent {
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+.tree-expand-icon {
+    width: 14px;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 10px;
+    flex-shrink: 0;
+    margin-right: 2px;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 3px;
+    transition: background-color 0.2s;
+    user-select: none;
+}
+
+.tree-expand-icon:hover {
+    background-color: var(--bg-hover);
+}
+
+.tree-icon {
+    margin: 0 6px;
+    flex-shrink: 0;
+    font-size: 14px;
+}
+
+.tree-label {
+    flex: 1;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Clickable tree labels for search functionality */
+.tree-label-clickable {
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.tree-label-clickable:hover {
+    background-color: rgba(0, 123, 255, 0.1);
+    color: var(--text-link);
+}
+
+/* Highlighted tree nodes for search results */
+.tree-node-highlighted .tree-node-content {
+    background-color: rgba(0, 123, 255, 0.15);
+    border-radius: 4px;
+}
+
+.tree-label-highlighted {
+    font-weight: 600;
+    color: var(--text-link);
+}
+
+/* Placeholder for alignment when no expand icon */
+.tree-expand-icon-placeholder {
+    width: 14px;
+    display: inline-block;
+}
+
+.tree-badge {
+    margin-left: 8px;
+    padding: 2px 8px;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 500;
+    flex-shrink: 0;
+}
+
+.tree-children {
+    display: block;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+}
+
+.tree-children.collapsed {
+    display: none;
+}
+
+/* Node type specific styles */
+.root-node .tree-label {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.path-node .tree-label {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.repo-node .tree-label {
+    color: var(--text-link);
+    font-weight: 400;
+}
+
+/* Tree lines effect (subtle) */
+.tree-node[data-level]:not([data-level="0"]) {
+    position: relative;
+}
+
+.tree-node[data-level]:not([data-level="0"]):before {
+    content: "";
+    position: absolute;
+    left: calc(var(--level, 1) * 20px - 10px);
+    top: 0;
+    bottom: 50%;
+    width: 1px;
+    border-left: 1px dotted var(--border-primary);
+    opacity: 0.3;
+}
+
+/* Scrollbar styling for tree container */
+.tree-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tree-container::-webkit-scrollbar-track {
+    background: var(--scrollbar-track);
+    border-radius: 3px;
+}
+
+.tree-container::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb);
+    border-radius: 3px;
+}
+
+.tree-container::-webkit-scrollbar-thumb:hover {
+    background: var(--scrollbar-thumb-hover);
+}
+
+/* Right content area (3/4 width) */
+.registries-body {
+    flex: 1;
+    width: 75%;
+    position: relative;
+    overflow: hidden;
+    transition: width 0.3s ease;
+}
+
+/* Full width when sidebar is collapsed */
+.registries-body.full-width {
+    width: 100%;
+}
+
+.repositories {
+    padding: 20px;
+    position: absolute;
+    top: 0;
+    bottom: 0;
     left: 0;
     right: 0;
     overflow-y: auto;
     overflow-x: hidden;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-primary);
+    border-radius: 4px;
 }
 
-/* Content wrapper for repositories - max width 1000px */
+/* Content wrapper for repositories - full width */
 .repositories-content {
-    max-width: 1200px;
-    margin: 0 auto;
     width: 100%;
     padding: 0;
     transition: all 0.3s ease;
@@ -386,6 +658,7 @@ body {
     opacity: 0;
     animation: cardFadeInUp 0.5s ease-out forwards;
     box-shadow: var(--shadow-sm);
+    width: 100%;
 }
 
 
@@ -659,21 +932,25 @@ tr:hover {
 }
 
 /* Scrollbar styling */
-.repositories::-webkit-scrollbar {
+.repositories::-webkit-scrollbar,
+.registries-tree::-webkit-scrollbar {
     width: 8px;
 }
 
-.repositories::-webkit-scrollbar-track {
+.repositories::-webkit-scrollbar-track,
+.registries-tree::-webkit-scrollbar-track {
     background: var(--scrollbar-track);
     border-radius: 4px;
 }
 
-.repositories::-webkit-scrollbar-thumb {
+.repositories::-webkit-scrollbar-thumb,
+.registries-tree::-webkit-scrollbar-thumb {
     background: var(--scrollbar-thumb);
     border-radius: 4px;
 }
 
-.repositories::-webkit-scrollbar-thumb:hover {
+.repositories::-webkit-scrollbar-thumb:hover,
+.registries-tree::-webkit-scrollbar-thumb:hover {
     background: var(--scrollbar-thumb-hover);
 }
 
@@ -791,8 +1068,53 @@ tr:hover {
         gap: 10px;
     }
     
+    .controls-wrapper {
+        flex-direction: row;
+        width: 100%;
+        padding: 15px;
+    }
+    
     .search-group {
         min-width: auto;
+        width: 100%;
+    }
+    
+    /* Hide sidebar by default on mobile */
+    .registries-tree {
+        position: fixed;
+        left: 0;
+        top: calc(var(--header-height) + var(--controls-height));
+        bottom: 0;
+        width: 280px;
+        z-index: 999;
+        background: var(--bg-secondary);
+        box-shadow: 2px 0 10px rgba(0, 0, 0, 0.2);
+        transform: translateX(-100%);
+        opacity: 0;
+    }
+    
+    .registries-tree:not(.collapsed) {
+        transform: translateX(0);
+        opacity: 1;
+    }
+    
+    /* Overlay when sidebar is open */
+    .registries-tree:not(.collapsed)::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+    
+    .registries-body {
+        width: 100%;
+    }
+    
+    .registries-body.full-width {
         width: 100%;
     }
     
@@ -838,6 +1160,19 @@ tr:hover {
     
     .header h4 {
         font-size: 0.9em;
+    }
+    
+    /* Hide sidebar on mobile */
+    .registries-tree {
+        display: none;
+    }
+    
+    .registries-body {
+        width: 100%;
+    }
+    
+    .main-content {
+        padding: 5px;
     }
     
     .repo-name {

@@ -1,12 +1,10 @@
 """
 SQLite-based caching service for Docker Registry data
 """
-import json
 import logging
 from datetime import datetime, timedelta
 from typing import List, Optional, Dict, Any
-from sqlalchemy import select, delete, update, and_, or_
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, delete
 
 from backend.models.database import (
     Repository, Tag, CacheMetadata, db_manager

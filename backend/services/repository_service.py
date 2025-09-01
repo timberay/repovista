@@ -4,7 +4,7 @@ Repository service layer for business logic and data processing
 
 import time
 import asyncio
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Tuple
 from datetime import datetime
 import logging
 

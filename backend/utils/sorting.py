@@ -4,7 +4,6 @@ Advanced sorting utilities for repository data
 
 from typing import List, Dict, Any, Callable, Optional, Union, TypeVar
 from datetime import datetime
-from functools import cmp_to_key
 import re
 
 T = TypeVar('T')

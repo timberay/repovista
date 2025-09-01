@@ -7,9 +7,8 @@ from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
 from datetime import datetime
 import logging
-from ..services.registry import RegistryClient, RegistryException
+from ..services.registry import RegistryClient, RegistryException, RegistryConnectionError
 from ..services.repository_service import RepositoryService, create_repository_service
-from ..services.cache import cache_service, etag_cache
 from ..services.sqlite_cache import sqlite_cache
 from ..models.schemas import (
     PaginationRequest,

@@ -3,7 +3,7 @@ Advanced search and filtering utilities for repository data
 """
 
 import re
-from typing import List, Dict, Any, Callable, Optional, Union, TypeVar
+from typing import List, Dict, Any, Callable, Optional, TypeVar
 from functools import lru_cache
 from datetime import datetime
 

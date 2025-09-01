@@ -3,7 +3,7 @@ Tag listing API endpoints for Docker Registry
 """
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Path
-from typing import List, Optional
+from typing import Optional
 from datetime import datetime, timezone
 
 from ..models.schemas import (
@@ -322,7 +322,7 @@ async def get_repository_tags(
     except RegistryRateLimitError as e:
         raise HTTPException(
             status_code=429, 
-            detail=f"Rate limit exceeded. Please wait before making additional requests."
+            detail="Rate limit exceeded. Please wait before making additional requests."
         )
     except RegistryServerError as e:
         raise HTTPException(
@@ -413,7 +413,7 @@ async def get_tag_details(
     except RegistryRateLimitError as e:
         raise HTTPException(
             status_code=429, 
-            detail=f"Rate limit exceeded. Please wait before making additional requests."
+            detail="Rate limit exceeded. Please wait before making additional requests."
         )
     except RegistryServerError as e:
         raise HTTPException(
