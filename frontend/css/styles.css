@@ -424,7 +424,7 @@ body {
 }
 
 .repo-name {
-    font-size: 1.2em;
+    font-size: 1em;
     font-weight: 500;
     color: var(--text-primary);
     margin-bottom: 8px;
@@ -841,7 +841,7 @@ tr:hover {
     }
     
     .repo-name {
-        font-size: 1.1em;
+        font-size: 1em;
     }
     
     .controls {

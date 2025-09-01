@@ -244,3 +244,7 @@ CORS_ORIGINS=http://localhost:8083,http://localhost:8080
 
 **Import Task Master's development workflow commands and guidelines, treat as if import is in the main CLAUDE.md file.**
 @./.taskmaster/CLAUDE.md
+
+## Using git
+
+- Use English to write a git commit message
