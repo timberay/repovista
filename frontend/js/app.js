@@ -518,12 +518,10 @@ async function loadRepositories(forceRefresh = false) {
                 force_refresh: forceRefresh.toString()
             });
             
-            console.log('Fetching all repositories for tree...');
             const allReposResponse = await fetch(`${API_BASE_URL}/repositories/?${params}`);
             if (allReposResponse.ok) {
                 const data = await allReposResponse.json();
                 allRepositories = data.repositories || [];
-                console.log('Fetched all repositories:', allRepositories.length, 'items');
             } else {
                 console.error('Failed to fetch all repositories:', allReposResponse.status);
                 // Fallback to using current repositories if fetch fails
@@ -536,7 +534,6 @@ async function loadRepositories(forceRefresh = false) {
         ui.renderRepositories(repositories, response.pagination);
         
         // Build tree from complete list, not filtered results
-        console.log('Building tree with allRepositories:', allRepositories.length, 'items');
         const treeData = registryTree.buildTree(allRepositories, searchTerm);
         const treeContainer = document.querySelector('.registries-tree .tree-container');
         if (!treeContainer) {
@@ -757,9 +754,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         await api.fetchRegistryConfig();
         
         // Initial load - await it to ensure tree is populated
-        console.log('Starting initial repository load...');
         await loadRepositories();
-        console.log('Initial repository load complete');
 
         // Setup search events
         const searchInput = document.getElementById('search-input');
