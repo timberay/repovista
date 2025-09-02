@@ -132,7 +132,7 @@ class TagResponse(BaseModel):
     size_formatted: str = Field(
         ...,
         description="Human-readable image size",
-        example="100.0 MB"
+        example="100M"
     )
     created: Optional[datetime] = Field(
         None,
@@ -142,7 +142,7 @@ class TagResponse(BaseModel):
     created_formatted: Optional[str] = Field(
         None,
         description="Human-readable creation date",
-        example="2 days ago"
+        example="2d"
     )
     architecture: Optional[str] = Field(
         "amd64",
@@ -167,9 +167,9 @@ class TagResponse(BaseModel):
                 "tag": "latest", 
                 "digest": "sha256:abc123def456789012345678901234567890123456789012345678901234",
                 "size_bytes": 104857600,
-                "size_formatted": "100.0 MB",
+                "size_formatted": "100M",
                 "created": "2023-01-01T12:00:00Z",
-                "created_formatted": "2 days ago",
+                "created_formatted": "2d",
                 "architecture": "amd64",
                 "os": "linux",
                 "pull_command": "docker pull nginx:latest"
@@ -276,9 +276,9 @@ class TagListResponse(PaginationResponse):
                         "tag": "latest",
                         "digest": "sha256:abc123def456789012345678901234567890123456789012345678901234",
                         "size_bytes": 104857600,
-                        "size_formatted": "100.0 MB", 
+                        "size_formatted": "100M", 
                         "created": "2023-01-01T12:00:00Z",
-                        "created_formatted": "2 days ago",
+                        "created_formatted": "2d",
                         "architecture": "amd64",
                         "os": "linux",
                         "pull_command": "docker pull nginx:latest"

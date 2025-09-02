@@ -366,7 +366,7 @@ body {
     border: 1px solid var(--border-primary);
     border-radius: 4px;
     padding: 20px;
-    overflow-y: auto;
+    overflow-y: hidden;
     box-shadow: var(--shadow-sm);
     transition: width 0.3s ease, transform 0.3s ease, opacity 0.3s ease;
     transform-origin: left;
@@ -399,7 +399,7 @@ body {
     font-size: 13px;
     overflow-y: auto;
     overflow-x: hidden;
-    max-height: calc(100vh - 260px);
+    max-height: calc(100% - 40px);
     padding: 5px 0;
 }
 
@@ -794,6 +794,7 @@ td {
     padding: 12px;
     border-bottom: 1px solid var(--border-primary);
     color: var(--text-primary);
+    font-size: 0.8em;
 }
 
 tr:hover {

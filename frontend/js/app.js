@@ -364,6 +364,7 @@ const ui = {
 // Registry tree builder and renderer
 const registryTree = {
     treeData: null,
+    expandedPaths: new Set(['Registries']), // Track expanded paths, root is always expanded
     
     // Build tree from repositories data with optional search highlighting
     buildTree(repositories, searchTerm = '') {
@@ -391,7 +392,7 @@ const registryTree = {
                         name: part,
                         path: fullPath,
                         children: {},
-                        expanded: false,
+                        expanded: this.expandedPaths.has(fullPath), // Use saved expansion state
                         isRepo: index === parts.length - 1,
                         repoData: index === parts.length - 1 ? repo : null,
                         isHighlighted: isMatched && index === parts.length - 1 // Highlight matching repos
@@ -414,17 +415,39 @@ const registryTree = {
         const nodeDiv = element.closest('.tree-node');
         const childrenDiv = nodeDiv.querySelector(':scope > .tree-children');
         const expandIcon = nodeDiv.querySelector('.tree-expand-icon');
+        const nodePath = nodeDiv.getAttribute('data-path') || 'Registries';
         
         if (childrenDiv) {
             const isExpanded = !childrenDiv.classList.contains('collapsed');
             if (isExpanded) {
                 childrenDiv.classList.add('collapsed');
                 expandIcon.textContent = '▶';
+                // Remove from expanded paths
+                this.expandedPaths.delete(nodePath);
             } else {
                 childrenDiv.classList.remove('collapsed');
                 expandIcon.textContent = '▼';
+                // Add to expanded paths
+                this.expandedPaths.add(nodePath);
             }
         }
+    },
+    
+    // Capture current expansion state from DOM
+    captureExpandedState() {
+        const expandedNodes = document.querySelectorAll('.tree-node .tree-children:not(.collapsed)');
+        this.expandedPaths.clear();
+        this.expandedPaths.add('Registries'); // Root is always expanded
+        
+        expandedNodes.forEach(node => {
+            const parentNode = node.closest('.tree-node');
+            if (parentNode) {
+                const path = parentNode.getAttribute('data-path');
+                if (path) {
+                    this.expandedPaths.add(path);
+                }
+            }
+        });
     },
     
     // Search by repository when clicking on tree node name
@@ -432,6 +455,9 @@ const registryTree = {
         if (event) {
             event.stopPropagation(); // Prevent triggering parent click handlers
         }
+        
+        // Capture current expansion state before rebuilding tree
+        this.captureExpandedState();
         
         // Update search input field
         const searchInput = document.getElementById('search-input');
@@ -778,6 +804,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (searchBtn) {
             searchBtn.addEventListener('click', () => {
                 if (isLoading) return;
+                // Capture tree expansion state before search
+                registryTree.captureExpandedState();
                 if (searchInput) {
                     searchTerm = searchInput.value;
                 }
@@ -798,6 +826,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (newSearchTerm.length >= 2 || newSearchTerm === '') {
                     // Only search if term changed
                     if (newSearchTerm !== searchTerm) {
+                        // Capture tree expansion state before search
+                        registryTree.captureExpandedState();
                         searchTerm = newSearchTerm;
                         currentPage = 1;
                         loadRepositories();
@@ -811,6 +841,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Search with Enter key (immediate)
             searchInput.addEventListener('keypress', (e) => {
                 if (e.key === 'Enter' && !isLoading) {
+                    // Capture tree expansion state before search
+                    registryTree.captureExpandedState();
                     searchTerm = e.target.value;
                     currentPage = 1;
                     loadRepositories();

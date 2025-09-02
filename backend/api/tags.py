@@ -92,13 +92,13 @@ async def get_registry_client() -> RegistryClient:
 
 def format_file_size(size_bytes: int) -> str:
     """
-    Format file size in bytes to human-readable format
+    Format file size in bytes to compact human-readable format
     
     Args:
         size_bytes: Size in bytes
         
     Returns:
-        Human-readable size string (e.g., "1.2 MB", "512 KB")
+        Compact size string (e.g., "1.2M", "512K")
     """
     if size_bytes == 0:
         return "0 B"
@@ -111,7 +111,7 @@ def format_file_size(size_bytes: int) -> str:
         size /= 1024.0
         unit_index += 1
     
-    # Format with appropriate decimal places
+    # Format with appropriate decimal places - no space between number and unit
     if size >= 100:
         return f"{size:.0f} {units[unit_index]}"
     elif size >= 10:
@@ -122,13 +122,13 @@ def format_file_size(size_bytes: int) -> str:
 
 def format_relative_time(dt: Optional[datetime]) -> Optional[str]:
     """
-    Format datetime to relative time string
+    Format datetime to compact relative time string
     
     Args:
         dt: Datetime to format
         
     Returns:
-        Relative time string (e.g., "2 days ago", "3 hours ago") or None
+        Compact time string (e.g., "2d", "3h", "45m") or None
     """
     if dt is None:
         return None
@@ -142,8 +142,9 @@ def format_relative_time(dt: Optional[datetime]) -> Optional[str]:
     diff = now - dt
     seconds = diff.total_seconds()
     
+    # Ultra-compact time format
     if seconds < 60:
-        return "just now"
+        return "now"
     elif seconds < 3600:  # Less than 1 hour
         minutes = int(seconds // 60)
         return f"{minutes} minute{'s' if minutes != 1 else ''} ago"
