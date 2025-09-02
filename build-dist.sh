@@ -6,7 +6,7 @@
 set -e
 
 # Configuration
-VERSION="${1:-v1.0.1}"
+VERSION="${1:-v1.0.2}"
 DIST_DIR="dist"
 PACKAGE_NAME="repovista-${VERSION}"
 PACKAGE_DIR="${DIST_DIR}/${PACKAGE_NAME}"
