@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Favicon Generator</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+        .favicon-preview { 
+            display: inline-block; 
+            margin: 10px; 
+            padding: 10px; 
+            background: white; 
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .size-label { 
+            text-align: center; 
+            margin-top: 5px; 
+            color: #666; 
+            font-size: 12px;
+        }
+        canvas { display: block; image-rendering: pixelated; }
+    </style>
+</head>
+<body>
+    <h1>Docker-style Favicon Preview</h1>
+    <div id="previews"></div>
+    
+    <script>
+        const svgCode = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+          <!-- Docker Blue Background -->
+          <rect width="64" height="64" rx="10" fill="#2496ED"/>
+          
+          <!-- Moby Dock (Docker Whale) Simplified -->
+          <g transform="translate(32, 32)">
+            <!-- Containers on whale back -->
+            <g fill="white">
+              <!-- Bottom row -->
+              <rect x="-12" y="-4" width="6" height="6" stroke="#2496ED" stroke-width="0.5"/>
+              <rect x="-5" y="-4" width="6" height="6" stroke="#2496ED" stroke-width="0.5"/>
+              <rect x="2" y="-4" width="6" height="6" stroke="#2496ED" stroke-width="0.5"/>
+              
+              <!-- Middle row -->
+              <rect x="-12" y="-11" width="6" height="6" stroke="#2496ED" stroke-width="0.5"/>
+              <rect x="-5" y="-11" width="6" height="6" stroke="#2496ED" stroke-width="0.5"/>
+              <rect x="2" y="-11" width="6" height="6" stroke="#2496ED" stroke-width="0.5"/>
+              
+              <!-- Top container -->
+              <rect x="-5" y="-18" width="6" height="6" stroke="#2496ED" stroke-width="0.5"/>
+            </g>
+            
+            <!-- Whale body -->
+            <ellipse cx="0" cy="6" rx="18" ry="10" fill="white"/>
+            
+            <!-- Whale tail fin -->
+            <path d="M -18 6 L -22 2 L -20 6 L -22 10 L -18 6" fill="white"/>
+            
+            <!-- Whale eye -->
+            <circle cx="8" cy="4" r="1.5" fill="#2496ED"/>
+            
+            <!-- Water spout -->
+            <circle cx="0" cy="-22" r="2" fill="white" opacity="0.8"/>
+            <circle cx="-3" cy="-20" r="1.5" fill="white" opacity="0.6"/>
+            <circle cx="3" cy="-21" r="1" fill="white" opacity="0.6"/>
+          </g>
+        </svg>`;
+        
+        const sizes = [16, 32, 48, 64, 128, 256];
+        const container = document.getElementById('previews');
+        
+        sizes.forEach(size => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'favicon-preview';
+            
+            const canvas = document.createElement('canvas');
+            canvas.width = size;
+            canvas.height = size;
+            
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            img.onload = function() {
+                ctx.drawImage(img, 0, 0, size, size);
+                
+                // Add download link
+                canvas.toBlob(blob => {
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `favicon-${size}x${size}.png`;
+                    a.textContent = 'Download';
+                    a.style.display = 'block';
+                    a.style.marginTop = '5px';
+                    a.style.textAlign = 'center';
+                    wrapper.appendChild(a);
+                });
+            };
+            
+            const blob = new Blob([svgCode], {type: 'image/svg+xml'});
+            const url = URL.createObjectURL(blob);
+            img.src = url;
+            
+            wrapper.appendChild(canvas);
+            
+            const label = document.createElement('div');
+            label.className = 'size-label';
+            label.textContent = `${size}x${size}`;
+            wrapper.appendChild(label);
+            
+            container.appendChild(wrapper);
+        });
+    </script>
+</body>
+</html>

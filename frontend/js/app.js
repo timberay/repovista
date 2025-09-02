@@ -334,13 +334,40 @@ const ui = {
             // Show single page as active
             pageNumbers = '<button class="page-btn active">1</button>';
         } else {
-            // Multiple pages - existing logic
-            const startPage = Math.max(1, currentPage - 2);
-            const endPage = Math.min(totalPages, currentPage + 2);
-
+            // Smart pagination with ellipsis for better UX
+            const maxVisible = 7; // Maximum visible page buttons in range
+            const halfVisible = Math.floor(maxVisible / 2);
+            
+            let startPage = Math.max(1, currentPage - halfVisible);
+            let endPage = Math.min(totalPages, currentPage + halfVisible);
+            
+            // Adjust range if near boundaries
+            if (currentPage <= halfVisible + 1) {
+                endPage = Math.min(totalPages, maxVisible);
+            } else if (currentPage >= totalPages - halfVisible) {
+                startPage = Math.max(1, totalPages - maxVisible + 1);
+            }
+            
+            // Always show first page
+            if (startPage > 1) {
+                pageNumbers += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+                if (startPage > 2) {
+                    pageNumbers += '<span class="page-btn ellipsis">···</span>';
+                }
+            }
+            
+            // Show page range
             for (let i = startPage; i <= endPage; i++) {
                 const activeClass = i === currentPage ? 'active' : '';
                 pageNumbers += `<button class="page-btn ${activeClass}" onclick="goToPage(${i})">${i}</button>`;
+            }
+            
+            // Always show last page
+            if (endPage < totalPages) {
+                if (endPage < totalPages - 1) {
+                    pageNumbers += '<span class="page-btn ellipsis">···</span>';
+                }
+                pageNumbers += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
             }
         }
 

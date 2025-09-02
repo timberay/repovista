@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Docker Registry Web UI (RepoVista)</title>
+    <title>RepoVista - Docker Registry Web UI</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+    <link rel="alternate icon" href="favicon.ico">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/favicon.svg">
+    
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="css/styles.css">
@@ -11,7 +17,10 @@
 <body>
     <div class="container-fluid">
         <div class="header">
-            <h2><span class="docker-icon">🐳</span>Docker Registry Web UI.</h2>
+            <h2>
+                <img src="assets/docker-logo.svg" alt="RepoVista" class="docker-icon" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 10px;">
+                <span style="color: #2196F3; font-weight: 600;">RepoVista</span> - Docker Registry UI
+            </h2>
             <h5><em>&copy; https://github.com/timberay/repovista</em></h5>
             <button class="theme-toggle-inline" id="theme-toggle-inline" aria-label="Toggle dark mode" title="Click to change theme">
                 <i class="fas fa-moon" id="theme-icon-inline"></i>
@@ -53,9 +62,17 @@
         </div>
 
         <div class="pagination" id="pagination">
-            <button class="page-btn" id="prev-page">◀</button>
-            <div id="page-numbers"></div>
-            <button class="page-btn" id="next-page">▶</button>
+            <button class="page-btn page-nav" id="prev-page" title="Previous page">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
+            </button>
+            <div id="page-numbers" style="display: inline-flex;"></div>
+            <button class="page-btn page-nav" id="next-page" title="Next page">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
         </div>
     </div>
 

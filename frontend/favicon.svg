@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Docker-style whale/container icon -->
+  <!-- Background -->
+  <rect width="64" height="64" rx="8" fill="#2496ED"/>
+  
+  <!-- Container boxes on whale back -->
+  <g transform="translate(32, 20)">
+    <!-- Back container -->
+    <rect x="-18" y="-8" width="10" height="10" fill="#ffffff" opacity="0.9" rx="1"/>
+    <!-- Middle container -->
+    <rect x="-6" y="-10" width="10" height="12" fill="#ffffff" opacity="0.95" rx="1"/>
+    <!-- Front container -->
+    <rect x="6" y="-7" width="10" height="9" fill="#ffffff" opacity="0.9" rx="1"/>
+  </g>
+  
+  <!-- Whale body -->
+  <ellipse cx="32" cy="36" rx="22" ry="14" fill="#ffffff"/>
+  
+  <!-- Whale tail -->
+  <path d="M 10 36 Q 8 32, 12 30 Q 10 36, 12 42 Q 8 40, 10 36" fill="#ffffff"/>
+  
+  <!-- Water waves -->
+  <path d="M 8 48 Q 16 46, 24 48 T 40 48 T 56 48" stroke="#ffffff" stroke-width="2" fill="none" opacity="0.5"/>
+  <path d="M 10 52 Q 18 50, 26 52 T 42 52 T 54 52" stroke="#ffffff" stroke-width="1.5" fill="none" opacity="0.3"/>
+  
+  <!-- Eye -->
+  <circle cx="42" cy="34" r="2" fill="#2496ED"/>
+  
+  <!-- Docker "D" subtle branding -->
+  <text x="32" y="40" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#2496ED" text-anchor="middle">D</text>
+</svg>

@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Background -->
+  <rect width="64" height="64" rx="8" fill="#2496ED"/>
+  
+  <!-- Docker Container Stack Grid -->
+  <g transform="translate(32, 28)">
+    <!-- Top row containers -->
+    <rect x="-15" y="-12" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    <rect x="-6" y="-12" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    <rect x="3" y="-12" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    
+    <!-- Middle row containers -->
+    <rect x="-15" y="-3" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    <rect x="-6" y="-3" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    <rect x="3" y="-3" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    
+    <!-- Bottom row containers -->
+    <rect x="-15" y="6" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    <rect x="-6" y="6" width="8" height="8" fill="white" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+    
+    <!-- Special highlighted container -->
+    <rect x="3" y="6" width="8" height="8" fill="#B8E0F7" stroke="#2496ED" stroke-width="1" rx="0.5"/>
+  </g>
+  
+  <!-- Ship/Wave element at bottom -->
+  <path d="M 12 46 Q 22 44, 32 46 T 52 46" stroke="white" stroke-width="3" fill="none" opacity="0.7" stroke-linecap="round"/>
+</svg>
